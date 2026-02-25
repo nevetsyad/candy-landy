@@ -25,7 +25,7 @@ jobs:
       run: npm install
     
     - name: Deploy to GitHub Pages
-      uses: peaceiris/gh-pages-action@v4
+      uses: peaceiris/actions-gh-pages@v4
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         target_branch: gh-pages
