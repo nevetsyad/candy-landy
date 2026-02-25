@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Candy Landy Debug Test</title>
+    <style>
+        body {
+            background: #f0f0f0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+        }
+        #console {
+            background: #000;
+            color: #0f0;
+            padding: 10px;
+            height: 200px;
+            overflow-y: scroll;
+            font-family: monospace;
+        }
+        #testCanvas {
+            border: 2px solid #333;
+        }
+    </style>
+</head>
+<body>
+    <h1>Candy Landy Debug Test</h1>
+    <canvas id="testCanvas" width="800" height="600"></canvas>
+    <div>
+        <h3>Console Output:</h3>
+        <div id="console"></div>
+    </div>
+    
+    <script>
+        // Console redirect for debugging
+        const consoleEl = document.getElementById('console');
+        const originalConsole = {
+            log: console.log,
+            error: console.error,
+            warn: console.warn
+        };
+        
+        console.log = function(...args) {
+            originalConsole.log(...args);
+            consoleEl.innerHTML += '<div>' + args.join(' ') + '</div>';
+        };
+        
+        console.error = function(...args) {
+            originalConsole.error(...args);
+            consoleEl.innerHTML += '<div style="color: #f00;">ERROR: ' + args.join(' ') + '</div>';
+        };
+        
+        console.warn = function(...args) {
+            originalConsole.warn(...args);
+            consoleEl.innerHTML += '<div style="color: #ff0;">WARN: ' + args.join(' ') + '</div>';
+        };
+        
+        // Test basic canvas
+        const canvas = document.getElementById('testCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        console.log('Canvas created:', canvas);
+        console.log('Canvas context:', ctx);
+        console.log('Canvas width:', canvas.width);
+        console.log('Canvas height:', canvas.height);
+        
+        // Draw test
+        ctx.fillStyle = 'pink';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        console.log('Drew pink background');
+        
+        ctx.fillStyle = 'blue';
+        ctx.fillRect(50, 50, 100, 100);
+        console.log('Drew blue square');
+        
+        // Try to load the game
+        console.log('Attempting to load enhanced-game.js...');
+        
+        // Load the game script
+        const script = document.createElement('script');
+        script.src = 'enhanced-game.js';
+        script.onload = function() {
+            console.log('enhanced-game.js loaded successfully');
+        };
+        script.onerror = function() {
+            console.error('Failed to load enhanced-game.js');
+        };
+        
+        document.head.appendChild(script);
+    </script>
+</body>
+</html>

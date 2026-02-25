@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Candy Landy - Test Version</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fecfef 100%);
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+        
+        #gameContainer {
+            position: relative;
+            border: 4px solid #ff69b4;
+            border-radius: 15px;
+            box-shadow: 0 0 30px rgba(255, 105, 180, 0.6);
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px;
+        }
+        
+        #gameCanvas {
+            display: block;
+            background: #87CEEB;
+            border-radius: 10px;
+        }
+        
+        #gameTitle {
+            color: #ff1493;
+            font-size: 2em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        
+        #instructions {
+            color: #8b4513;
+            font-size: 1.2em;
+            text-align: center;
+            margin-top: 10px;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 10px;
+            border-radius: 10px;
+            border: 2px solid #ff69b4;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <div id="gameTitle">🍬 Candy Landy (Test) 🍬</div>
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+        <div id="instructions">
+            Use ARROW KEYS to move • SPACE/ENTER/UP to jump • Collect candies!
+        </div>
+    </div>
+    <script src="simple-working-game.js"></script>
+</body>
+</html>
