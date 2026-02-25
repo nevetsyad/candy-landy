@@ -1,0 +1,19 @@
+name: Deploy
+run:
+  uses: actions/checkout@v4
+  with:
+    submodules: true
+- name: Setup Node.js environment
+  uses: actions/setup-node@v4
+  with:
+    node-version: 18
+- name: Install dependencies
+  run: npm install
+- name: Build
+  run: npm run build
+- name: Deploy to GitHub Pages
+  uses: peaceiris/gh-pages-action@v4
+  with:
+    github_token: ${{ secrets.GITHUB_TOKEN }}
+    target_branch: gh-pages
+    publish_dir: dist
