@@ -4,7 +4,10 @@
   "description": "A delightful side-scrolling game featuring Emmaline, a little girl with pigtails, on a candy-themed adventure!",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "echo 'Static site - no build needed'",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d ."
   },
   "repository": {
     "type": "git",
