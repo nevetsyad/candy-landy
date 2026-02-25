@@ -58,10 +58,10 @@ class Emmaline {
 
         // Screen bounds
         if (this.x < 0) this.x = 0;
-        if (this.x + this.width > canvas.width) this.x = canvas.width - this.width;
+        if (this.x + this.width > window.canvas.width) this.x = window.canvas.width - this.width;
 
         // Fell off screen
-        if (this.y > canvas.height) {
+        if (this.y > window.canvas.height) {
             gameState = 'lost';
         }
 
@@ -91,101 +91,101 @@ class Emmaline {
     }
 
     draw() {
-        ctx.save();
+        window.ctx.save();
         
         const centerX = this.x + this.width / 2;
         const centerY = this.y + this.height / 2;
 
         // Face direction
         if (!this.facingRight) {
-            ctx.translate(centerX, centerY);
-            ctx.scale(-1, 1);
-            ctx.translate(-centerX, -centerY);
+            window.ctx.translate(centerX, centerY);
+            window.ctx.scale(-1, 1);
+            window.ctx.translate(-centerX, -centerY);
         }
 
         // Body (dress)
-        ctx.fillStyle = '#FF69B4';
-        ctx.beginPath();
-        ctx.moveTo(centerX - 15, this.y + 25);
-        ctx.lineTo(centerX + 15, this.y + 25);
-        ctx.lineTo(centerX + 20, this.y + this.height);
-        ctx.lineTo(centerX - 20, this.y + this.height);
-        ctx.closePath();
-        ctx.fill();
+        window.ctx.fillStyle = '#FF69B4';
+        window.ctx.beginPath();
+        window.ctx.moveTo(centerX - 15, this.y + 25);
+        window.ctx.lineTo(centerX + 15, this.y + 25);
+        window.ctx.lineTo(centerX + 20, this.y + this.height);
+        window.ctx.lineTo(centerX - 20, this.y + this.height);
+        window.ctx.closePath();
+        window.ctx.fill();
 
         // Head
-        ctx.fillStyle = '#FFDAB9';
-        ctx.beginPath();
-        ctx.arc(centerX, this.y + 15, 15, 0, Math.PI * 2);
-        ctx.fill();
+        window.ctx.fillStyle = '#FFDAB9';
+        window.ctx.beginPath();
+        window.ctx.arc(centerX, this.y + 15, 15, 0, Math.PI * 2);
+        window.ctx.fill();
 
         // Hair (brown pigtails)
-        ctx.fillStyle = '#8B4513';
+        window.ctx.fillStyle = '#8B4513';
 
         // Left pigtail
         const pigtailSway = Math.sin(animationFrame * 0.2) * 3;
-        ctx.beginPath();
-        ctx.moveTo(centerX - 12, this.y + 12);
-        ctx.quadraticCurveTo(
+        window.ctx.beginPath();
+        window.ctx.moveTo(centerX - 12, this.y + 12);
+        window.ctx.quadraticCurveTo(
             centerX - 25 + pigtailSway,
             this.y + 20,
             centerX - 20 + pigtailSway,
             this.y + 35
         );
-        ctx.quadraticCurveTo(
+        window.ctx.quadraticCurveTo(
             centerX - 15 + pigtailSway,
             this.y + 25,
             centerX - 12,
             this.y + 15
         );
-        ctx.fill();
+        window.ctx.fill();
 
         // Right pigtail
-        ctx.beginPath();
-        ctx.moveTo(centerX + 12, this.y + 12);
-        ctx.quadraticCurveTo(
+        window.ctx.beginPath();
+        window.ctx.moveTo(centerX + 12, this.y + 12);
+        window.ctx.quadraticCurveTo(
             centerX + 25 - pigtailSway,
             this.y + 20,
             centerX + 20 - pigtailSway,
             this.y + 35
         );
-        ctx.quadraticCurveTo(
+        window.ctx.quadraticCurveTo(
             centerX + 15 - pigtailSway,
             this.y + 25,
             centerX + 12,
             this.y + 15
         );
-        ctx.fill();
+        window.ctx.fill();
 
         // Eyes
-        ctx.fillStyle = '#000';
-        ctx.beginPath();
-        ctx.arc(centerX - 5, this.y + 13, 2, 0, Math.PI * 2);
-        ctx.arc(centerX + 5, this.y + 13, 2, 0, Math.PI * 2);
-        ctx.fill();
+        window.ctx.fillStyle = '#000';
+        window.ctx.beginPath();
+        window.ctx.arc(centerX - 5, this.y + 13, 2, 0, Math.PI * 2);
+        window.ctx.arc(centerX + 5, this.y + 13, 2, 0, Math.PI * 2);
+        window.ctx.fill();
 
         // Smile
-        ctx.strokeStyle = '#000';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.arc(centerX, this.y + 18, 4, 0, Math.PI);
-        ctx.stroke();
+        window.ctx.strokeStyle = '#000';
+        window.ctx.lineWidth = 1;
+        window.ctx.beginPath();
+        window.ctx.arc(centerX, this.y + 18, 4, 0, Math.PI);
+        window.ctx.stroke();
 
         // Legs (animate when moving)
         const legOffset = (this.vx !== 0 && this.isOnGround) ? Math.sin(animationFrame * 0.3) * 5 : 0;
-        ctx.fillStyle = '#FFDAB9';
+        window.ctx.fillStyle = '#FFDAB9';
         
         // Left leg
-        ctx.fillRect(centerX - 10 + legOffset, this.y + this.height - 15, 6, 15);
+        window.ctx.fillRect(centerX - 10 + legOffset, this.y + this.height - 15, 6, 15);
         // Right leg
-        ctx.fillRect(centerX + 4 - legOffset, this.y + this.height - 15, 6, 15);
+        window.ctx.fillRect(centerX + 4 - legOffset, this.y + this.height - 15, 6, 15);
 
         // Arms
         const armOffset = (this.vx !== 0) ? Math.sin(animationFrame * 0.3) * 8 : 0;
-        ctx.fillRect(centerX - 20, this.y + 28 + armOffset, 6, 20);
-        ctx.fillRect(centerX + 14, this.y + 28 - armOffset, 6, 20);
+        window.ctx.fillRect(centerX - 20, this.y + 28 + armOffset, 6, 20);
+        window.ctx.fillRect(centerX + 14, this.y + 28 - armOffset, 6, 20);
 
-        ctx.restore();
+        window.ctx.restore();
     }
 
     jump() {
@@ -332,54 +332,54 @@ class Level {
         this.candies.forEach(candy => {
             if (!candy.collected) {
                 // Candy glow
-                ctx.beginPath();
-                ctx.arc(candy.x, candy.y, candy.radius + 5, 0, Math.PI * 2);
-                ctx.fillStyle = 'rgba(255,255,255,0.3)';
-                ctx.fill();
+                window.ctx.beginPath();
+                window.ctx.arc(candy.x, candy.y, candy.radius + 5, 0, Math.PI * 2);
+                window.ctx.fillStyle = 'rgba(255,255,255,0.3)';
+                window.ctx.fill();
 
                 // Candy
-                ctx.beginPath();
-                ctx.arc(candy.x, candy.y, candy.radius, 0, Math.PI * 2);
-                ctx.fillStyle = candy.color;
-                ctx.fill();
+                window.ctx.beginPath();
+                window.ctx.arc(candy.x, candy.y, candy.radius, 0, Math.PI * 2);
+                window.ctx.fillStyle = candy.color;
+                window.ctx.fill();
 
                 // Candy shine
-                ctx.beginPath();
-                ctx.arc(candy.x - 3, candy.y - 3, candy.radius / 3, 0, Math.PI * 2);
-                ctx.fillStyle = 'rgba(255,255,255,0.6)';
-                ctx.fill();
+                window.ctx.beginPath();
+                window.ctx.arc(candy.x - 3, candy.y - 3, candy.radius / 3, 0, Math.PI * 2);
+                window.ctx.fillStyle = 'rgba(255,255,255,0.6)';
+                window.ctx.fill();
             }
         });
 
         // Draw particles
         this.particles.forEach(p => {
-            ctx.globalAlpha = p.life / 30;
-            ctx.fillStyle = p.color;
-            ctx.fillRect(p.x - p.size/2, p.y - p.size/2, p.size, p.size);
+            window.ctx.globalAlpha = p.life / 30;
+            window.ctx.fillStyle = p.color;
+            window.ctx.fillRect(p.x - p.size/2, p.y - p.size/2, p.size, p.size);
         });
-        ctx.globalAlpha = 1;
+        window.ctx.globalAlpha = 1;
 
         // Draw goal flag
         const flagX = this.goal.x;
         const flagY = this.goal.y;
 
         // Flag pole
-        ctx.fillStyle = '#8B4513';
-        ctx.fillRect(flagX, flagY, 6, 80);
+        window.ctx.fillStyle = '#8B4513';
+        window.ctx.fillRect(flagX, flagY, 6, 80);
 
         // Flag
-        ctx.fillStyle = '#FF6B6B';
-        ctx.beginPath();
-        ctx.moveTo(flagX + 6, flagY);
-        ctx.lineTo(flagX + 60, flagY + 25);
-        ctx.lineTo(flagX + 6, flagY + 50);
-        ctx.closePath();
-        ctx.fill();
+        window.ctx.fillStyle = '#FF6B6B';
+        window.ctx.beginPath();
+        window.ctx.moveTo(flagX + 6, flagY);
+        window.ctx.lineTo(flagX + 60, flagY + 25);
+        window.ctx.lineTo(flagX + 6, flagY + 50);
+        window.ctx.closePath();
+        window.ctx.fill();
 
         // Star on flag
-        ctx.fillStyle = '#FFD700';
-        ctx.font = '24px Arial';
-        ctx.fillText('★', flagX + 20, flagY + 32);
+        window.ctx.fillStyle = '#FFD700';
+        window.ctx.font = '24px Arial';
+        window.ctx.fillText('★', flagX + 20, flagY + 32);
     }
 }
 
@@ -455,124 +455,124 @@ function update() {
 
 function drawStartScreen() {
     // Semi-transparent overlay
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    window.ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+    window.ctx.fillRect(0, 0, window.canvas.width, window.canvas.height);
 
     // Title
-    ctx.fillStyle = '#FF69B4';
-    ctx.font = 'bold 64px Comic Sans MS, cursive';
-    ctx.textAlign = 'center';
-    ctx.fillText('🍬 Candy Landy 🍬', canvas.width / 2, canvas.height / 2 - 100);
+    window.ctx.fillStyle = '#FF69B4';
+    window.ctx.font = 'bold 64px Comic Sans MS, cursive';
+    window.ctx.textAlign = 'center';
+    window.ctx.fillText('🍬 Candy Landy 🍬', window.canvas.width / 2, window.canvas.height / 2 - 100);
 
     // Instructions
-    ctx.fillStyle = '#FFFFFF';
-    ctx.font = '28px Comic Sans MS, cursive';
-    ctx.fillText('Press SPACE or ENTER to Start', canvas.width / 2, canvas.height / 2);
+    window.ctx.fillStyle = '#FFFFFF';
+    window.ctx.font = '28px Comic Sans MS, cursive';
+    window.ctx.fillText('Press SPACE or ENTER to Start', window.canvas.width / 2, window.canvas.height / 2);
 
-    ctx.font = '20px Comic Sans MS, cursive';
-    ctx.fillStyle = '#FFE4B5';
-    ctx.fillText('← → Arrow Keys to Move', canvas.width / 2, canvas.height / 2 + 50);
-    ctx.fillText('SPACE / ↑ / ENTER to Jump (Double Jump!)', canvas.width / 2, canvas.height / 2 + 80);
-    ctx.fillText('Collect all the candies!', canvas.width / 2, canvas.height / 2 + 110);
-    ctx.fillText('Reach the flag to win!', canvas.width / 2, canvas.height / 2 + 140);
+    window.ctx.font = '20px Comic Sans MS, cursive';
+    window.ctx.fillStyle = '#FFE4B5';
+    window.ctx.fillText('← → Arrow Keys to Move', window.canvas.width / 2, window.canvas.height / 2 + 50);
+    window.ctx.fillText('SPACE / ↑ / ENTER to Jump (Double Jump!)', window.canvas.width / 2, window.canvas.height / 2 + 80);
+    window.ctx.fillText('Collect all the candies!', window.canvas.width / 2, window.canvas.height / 2 + 110);
+    window.ctx.fillText('Reach the flag to win!', window.canvas.width / 2, window.canvas.height / 2 + 140);
 
     // Draw a sample character
-    ctx.save();
-    ctx.translate(canvas.width / 2 - 20, canvas.height / 2 + 180);
-    ctx.scale(1.5, 1.5);
+    window.ctx.save();
+    window.ctx.translate(window.canvas.width / 2 - 20, window.canvas.height / 2 + 180);
+    window.ctx.scale(1.5, 1.5);
     
     // Mini Emmaline
-    ctx.fillStyle = '#FF69B4';
-    ctx.beginPath();
-    ctx.moveTo(0, 15);
-    ctx.lineTo(30, 15);
-    ctx.lineTo(35, 50);
-    ctx.lineTo(-5, 50);
-    ctx.closePath();
-    ctx.fill();
+    window.ctx.fillStyle = '#FF69B4';
+    window.ctx.beginPath();
+    window.ctx.moveTo(0, 15);
+    window.ctx.lineTo(30, 15);
+    window.ctx.lineTo(35, 50);
+    window.ctx.lineTo(-5, 50);
+    window.ctx.closePath();
+    window.ctx.fill();
     
-    ctx.fillStyle = '#FFDAB9';
-    ctx.beginPath();
-    ctx.arc(15, 5, 10, 0, Math.PI * 2);
-    ctx.fill();
+    window.ctx.fillStyle = '#FFDAB9';
+    window.ctx.beginPath();
+    window.ctx.arc(15, 5, 10, 0, Math.PI * 2);
+    window.ctx.fill();
     
-    ctx.fillStyle = '#8B4513';
-    ctx.beginPath();
-    ctx.arc(5, 3, 4, 0, Math.PI * 2);
-    ctx.arc(25, 3, 4, 0, Math.PI * 2);
-    ctx.fill();
+    window.ctx.fillStyle = '#8B4513';
+    window.ctx.beginPath();
+    window.ctx.arc(5, 3, 4, 0, Math.PI * 2);
+    window.ctx.arc(25, 3, 4, 0, Math.PI * 2);
+    window.ctx.fill();
     
-    ctx.restore();
+    window.ctx.restore();
 }
 
 function drawWinScreen() {
     // Semi-transparent overlay
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    window.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+    window.ctx.fillRect(0, 0, window.canvas.width, window.canvas.height);
 
     // Victory message
-    ctx.fillStyle = '#FFD700';
-    ctx.font = 'bold 56px Comic Sans MS, cursive';
-    ctx.textAlign = 'center';
-    ctx.fillText('🎉 YOU WIN! 🎉', canvas.width / 2, canvas.height / 2 - 60);
+    window.ctx.fillStyle = '#FFD700';
+    window.ctx.font = 'bold 56px Comic Sans MS, cursive';
+    window.ctx.textAlign = 'center';
+    window.ctx.fillText('🎉 YOU WIN! 🎉', window.canvas.width / 2, window.canvas.height / 2 - 60);
 
-    ctx.fillStyle = '#FFFFFF';
-    ctx.font = '32px Comic Sans MS, cursive';
-    ctx.fillText(`Final Score: ${score}`, canvas.width / 2, canvas.height / 2 + 10);
+    window.ctx.fillStyle = '#FFFFFF';
+    window.ctx.font = '32px Comic Sans MS, cursive';
+    window.ctx.fillText(`Final Score: ${score}`, window.canvas.width / 2, window.canvas.height / 2 + 10);
 
-    ctx.fillStyle = '#98FB98';
-    ctx.font = '24px Comic Sans MS, cursive';
-    ctx.fillText('Press SPACE or ENTER to Play Again', canvas.width / 2, canvas.height / 2 + 70);
+    window.ctx.fillStyle = '#98FB98';
+    window.ctx.font = '24px Comic Sans MS, cursive';
+    window.ctx.fillText('Press SPACE or ENTER to Play Again', window.canvas.width / 2, window.canvas.height / 2 + 70);
 
     // Confetti particles (simple animation)
     const time = Date.now() / 100;
     for (let i = 0; i < 50; i++) {
-        const x = (Math.sin(time + i) * canvas.width / 2) + canvas.width / 2;
-        const y = (Math.cos(time * 0.7 + i * 2) * canvas.height / 2) + canvas.height / 2;
-        ctx.fillStyle = `hsl(${(time * 50 + i * 7) % 360}, 70%, 60%)`;
-        ctx.fillRect(x, y, 8, 8);
+        const x = (Math.sin(time + i) * window.canvas.width / 2) + window.canvas.width / 2;
+        const y = (Math.cos(time * 0.7 + i * 2) * window.canvas.height / 2) + window.canvas.height / 2;
+        window.ctx.fillStyle = `hsl(${(time * 50 + i * 7) % 360}, 70%, 60%)`;
+        window.ctx.fillRect(x, y, 8, 8);
     }
 }
 
 function drawLoseScreen() {
     // Semi-transparent overlay
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    window.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+    window.ctx.fillRect(0, 0, window.canvas.width, window.canvas.height);
 
     // Game over message
-    ctx.fillStyle = '#FF6B6B';
-    ctx.font = 'bold 56px Comic Sans MS, cursive';
-    ctx.textAlign = 'center';
-    ctx.fillText('😢 GAME OVER 😢', canvas.width / 2, canvas.height / 2 - 60);
+    window.ctx.fillStyle = '#FF6B6B';
+    window.ctx.font = 'bold 56px Comic Sans MS, cursive';
+    window.ctx.textAlign = 'center';
+    window.ctx.fillText('😢 GAME OVER 😢', window.canvas.width / 2, window.canvas.height / 2 - 60);
 
-    ctx.fillStyle = '#FFFFFF';
-    ctx.font = '32px Comic Sans MS, cursive';
-    ctx.fillText(`Score: ${score}`, canvas.width / 2, canvas.height / 2 + 10);
+    window.ctx.fillStyle = '#FFFFFF';
+    window.ctx.font = '32px Comic Sans MS, cursive';
+    window.ctx.fillText(`Score: ${score}`, window.canvas.width / 2, window.canvas.height / 2 + 10);
 
-    ctx.fillStyle = '#FFB6C1';
-    ctx.font = '24px Comic Sans MS, cursive';
-    ctx.fillText('Press SPACE or ENTER to Try Again', canvas.width / 2, canvas.height / 2 + 70);
+    window.ctx.fillStyle = '#FFB6C1';
+    window.ctx.font = '24px Comic Sans MS, cursive';
+    window.ctx.fillText('Press SPACE or ENTER to Try Again', window.canvas.width / 2, window.canvas.height / 2 + 70);
 }
 
 function drawUI() {
     // Score
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-    ctx.fillRect(10, 10, 150, 40);
-    ctx.fillStyle = '#FFFFFF';
-    ctx.font = 'bold 24px Comic Sans MS, cursive';
-    ctx.textAlign = 'left';
-    ctx.fillText(`🍬 Score: ${score}`, 20, 38);
+    window.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+    window.ctx.fillRect(10, 10, 150, 40);
+    window.ctx.fillStyle = '#FFFFFF';
+    window.ctx.font = 'bold 24px Comic Sans MS, cursive';
+    window.ctx.textAlign = 'left';
+    window.ctx.fillText(`🍬 Score: ${score}`, 20, 38);
 
     // Jump indicator
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-    ctx.fillRect(canvas.width - 120, 10, 110, 40);
-    ctx.fillStyle = '#FFFFFF';
-    ctx.font = '20px Comic Sans MS, cursive';
-    ctx.fillText(`Jumps: ${emmaline.maxJumps - emmaline.jumpCount}`, canvas.width - 110, 38);
+    window.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+    window.ctx.fillRect(window.canvas.width - 120, 10, 110, 40);
+    window.ctx.fillStyle = '#FFFFFF';
+    window.ctx.font = '20px Comic Sans MS, cursive';
+    window.ctx.fillText(`Jumps: ${emmaline.maxJumps - emmaline.jumpCount}`, window.canvas.width - 110, 38);
 }
 
 function draw() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    window.ctx.clearRect(0, 0, window.canvas.width, window.canvas.height);
 
     level.draw();
 
@@ -605,7 +605,7 @@ window.addEventListener('DOMContentLoaded', function() {
 
 // Fallback for older browsers
 window.addEventListener('load', function() {
-    if (!canvas) {
+    if (!window.canvas) {
         initGame();
         gameLoop();
     }
