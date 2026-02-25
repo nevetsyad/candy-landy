@@ -1229,7 +1229,7 @@ function handleKeyDown(e) {
     
     if (gameState === 'paused') return;
     
-    if (e.key === ' ' || e.key === 'ArrowUp') {
+    if (e.key === ' ' || e.key === 'ArrowUp' || e.key === 'Enter') {
         if (gameState === 'playing') {
             emmaline.jump();
         } else if (gameState === 'start' || gameState === 'won' || gameState === 'lost') {
@@ -1237,9 +1237,9 @@ function handleKeyDown(e) {
         }
         e.preventDefault();
     }
-    
+
     // Prevent scrolling
-    if ([' ', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+    if ([' ', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter'].includes(e.key)) {
         e.preventDefault();
     }
 }

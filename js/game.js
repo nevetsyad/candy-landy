@@ -1,9 +1,4 @@
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
-
-// --- Canvas Settings ---
-canvas.width = 800;
-canvas.height = 600;
+// Canvas initialization will be done in initGame()
 
 // --- Game Constants ---
 const GRAVITY = 0.6;
@@ -255,8 +250,8 @@ class Level {
 
         // Goal flag
         this.goal = {
-            x: canvas.width - 80,
-            y: canvas.height - GROUND_HEIGHT - 80,
+            x: window.canvas.width - 80,
+            y: window.canvas.height - GROUND_HEIGHT - 80,
             width: 20,
             height: 80
         };
@@ -311,26 +306,26 @@ class Level {
 
     draw() {
         // Draw background gradient
-        const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+        const gradient = window.ctx.createLinearGradient(0, 0, 0, window.canvas.height);
         gradient.addColorStop(0, '#87CEEB');
         gradient.addColorStop(0.6, '#E0F7FA');
         gradient.addColorStop(1, '#98FB98');
-        ctx.fillStyle = gradient;
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        window.ctx.fillStyle = gradient;
+        window.ctx.fillRect(0, 0, window.canvas.width, window.canvas.height);
 
         // Draw platforms
         this.platforms.forEach(platform => {
             // Platform shadow
-            ctx.fillStyle = 'rgba(0,0,0,0.2)';
-            ctx.fillRect(platform.x + 4, platform.y + 4, platform.width, platform.height);
+            window.ctx.fillStyle = 'rgba(0,0,0,0.2)';
+            window.ctx.fillRect(platform.x + 4, platform.y + 4, platform.width, platform.height);
             
             // Platform
-            ctx.fillStyle = platform.color;
-            ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
+            window.ctx.fillStyle = platform.color;
+            window.ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
             
             // Platform highlight
-            ctx.fillStyle = 'rgba(255,255,255,0.3)';
-            ctx.fillRect(platform.x, platform.y, platform.width, 4);
+            window.ctx.fillStyle = 'rgba(255,255,255,0.3)';
+            window.ctx.fillRect(platform.x, platform.y, platform.width, 4);
         });
 
         // Draw candies
@@ -390,6 +385,24 @@ class Level {
 
 // --- Game Functions ---
 function initGame() {
+    // Initialize canvas
+    window.canvas = document.getElementById('gameCanvas');
+    if (!canvas) {
+        console.error('Canvas element not found!');
+        return;
+    }
+    
+    window.ctx = canvas.getContext('2d');
+    if (!ctx) {
+        console.error('Failed to get canvas context!');
+        return;
+    }
+    
+    // Set canvas dimensions
+    canvas.width = 800;
+    canvas.height = 600;
+    
+    // Initialize game objects
     level = new Level();
     emmaline = new Emmaline(50, canvas.height - GROUND_HEIGHT - 80);
     score = 0;
@@ -406,7 +419,7 @@ function resetGame() {
 function handleKeyDown(e) {
     keys[e.key] = true;
     
-    if (e.key === ' ' || e.key === 'ArrowUp') {
+    if (e.key === ' ' || e.key === 'ArrowUp' || e.key === 'Enter') {
         if (gameState === 'playing') {
             emmaline.jump();
         } else if (gameState === 'start' || gameState === 'won' || gameState === 'lost') {
@@ -415,7 +428,7 @@ function handleKeyDown(e) {
     }
     
     // Prevent scrolling
-    if ([' ', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+    if ([' ', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter'].includes(e.key)) {
         e.preventDefault();
     }
 }
@@ -459,7 +472,7 @@ function drawStartScreen() {
     ctx.font = '20px Comic Sans MS, cursive';
     ctx.fillStyle = '#FFE4B5';
     ctx.fillText('← → Arrow Keys to Move', canvas.width / 2, canvas.height / 2 + 50);
-    ctx.fillText('SPACE or ↑ to Jump (Double Jump!)', canvas.width / 2, canvas.height / 2 + 80);
+    ctx.fillText('SPACE / ↑ / ENTER to Jump (Double Jump!)', canvas.width / 2, canvas.height / 2 + 80);
     ctx.fillText('Collect all the candies!', canvas.width / 2, canvas.height / 2 + 110);
     ctx.fillText('Reach the flag to win!', canvas.width / 2, canvas.height / 2 + 140);
 
@@ -585,8 +598,19 @@ function gameLoop() {
 }
 
 // --- Initialize ---
+window.addEventListener('DOMContentLoaded', function() {
+    initGame();
+    gameLoop();
+});
+
+// Fallback for older browsers
+window.addEventListener('load', function() {
+    if (!canvas) {
+        initGame();
+        gameLoop();
+    }
+});
+
+// Event listeners
 window.addEventListener('keydown', handleKeyDown);
 window.addEventListener('keyup', handleKeyUp);
-
-initGame();
-gameLoop();
