@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Candy Landy Diagnostic</title>
+  <style>
+    body {
+      margin: 20px;
+      font-family: Arial, sans-serif;
+      background: #f0f0f0;
+    }
+    .test-section {
+      margin: 20px 0;
+      padding: 15px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    canvas {
+      border: 2px solid #333;
+      background: white;
+    }
+    #console {
+      background: #000;
+      color: #0f0;
+      padding: 10px;
+      font-family: monospace;
+      height: 200px;
+      overflow-y: auto;
+    }
+  </style>
+</head>
+<body>
+  <h1>Candy Landy Diagnostic</h1>
+  
+  <div class="test-section">
+    <h3>Canvas Test</h3>
+    <canvas id="testCanvas" width="400" height="300"></canvas>
+    <p>Canvas should show a blue background with white text</p>
+  </div>
+  
+  <div class="test-section">
+    <h3>Game Canvas Test</h3>
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    <p>Game canvas should show a gradient background</p>
+  </div>
+  
+  <div class="test-section">
+    <h3>Console Output</h3>
+    <div id="console"></div>
+  </div>
+  
+  <script>
+    function log(message) {
+      const console = document.getElementById('console');
+      console.innerHTML += message + '<br>';
+      console.scrollTop = console.scrollHeight;
+    }
+    
+    log('Starting diagnostic...');
+    
+    // Test 1: Basic canvas
+    const testCanvas = document.getElementById('testCanvas');
+    const testCtx = testCanvas.getContext('2d');
+    
+    if (testCtx) {
+      log('✓ Basic canvas context created successfully');
+      testCtx.fillStyle = '#4169E1';
+      testCtx.fillRect(0, 0, testCanvas.width, testCanvas.height);
+      testCtx.fillStyle = 'white';
+      testCtx.font = '20px Arial';
+      testCtx.fillText('Canvas test successful!', 100, 150);
+    } else {
+      log('✗ Failed to create basic canvas context');
+    }
+    
+    // Test 2: Game canvas
+    const gameCanvas = document.getElementById('gameCanvas');
+    const gameCtx = gameCanvas.getContext('2d');
+    
+    if (gameCtx) {
+      log('✓ Game canvas context created successfully');
+      
+      // Test gradient (same as in game.js)
+      const gradient = gameCtx.createLinearGradient(0, 0, 0, gameCanvas.height);
+      gradient.addColorStop(0, '#87CEEB');
+      gradient.addColorStop(0.6, '#E0F7FA');
+      gradient.addColorStop(1, '#98FB98');
+      gameCtx.fillStyle = gradient;
+      gameCtx.fillRect(0, 0, gameCanvas.width, gameCanvas.height);
+      
+      gameCtx.fillStyle = 'black';
+      gameCtx.font = '24px Arial';
+      gameCtx.fillText('Gradient test successful!', 250, 300);
+      
+    } else {
+      log('✗ Failed to create game canvas context');
+    }
+    
+    // Test 3: Check if game.js can be loaded
+    try {
+      log('Testing game.js file...');
+      const script = document.createElement('script');
+      script.src = 'js/game.js';
+      script.onload = function() {
+        log('✓ Game.js loaded successfully');
+        
+        // Check if game objects are created
+        if (typeof initGame === 'function') {
+          log('✓ initGame function found');
+          initGame();
+          log('✓ Game initialized');
+          
+          if (typeof gameLoop === 'function') {
+            log('✓ Game loop found');
+            gameLoop();
+            log('✓ Game loop started');
+          } else {
+            log('✗ Game loop function not found');
+          }
+        } else {
+          log('✗ initGame function not found');
+        }
+      };
+      script.onerror = function() {
+        log('✗ Failed to load game.js');
+      };
+      document.head.appendChild(script);
+    } catch (error) {
+      log('✗ Error loading game.js: ' + error.message);
+    }
+    
+    log('Diagnostic complete.');
+  </script>
+</body>
+</html>

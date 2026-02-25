@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Candy Landy Test</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: Arial, sans-serif;
+    }
+    #gameCanvas {
+      border: 2px solid #333;
+      background: #fff0f5;
+    }
+  </style>
+</head>
+<body>
+  <h1>Candy Landy Test</h1>
+  <canvas id="gameCanvas" width="800" height="600"></canvas>
+  <script>
+    // Simple test to check if canvas context works
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    if (ctx) {
+      console.log('Canvas context created successfully');
+      ctx.fillStyle = '#FF69B4';
+      ctx.fillRect(50, 50, 100, 100);
+      ctx.fillStyle = '#000';
+      ctx.font = '20px Arial';
+      ctx.fillText('Test successful!', 60, 110);
+    } else {
+      console.error('Failed to create canvas context');
+    }
+  </script>
+</body>
+</html>
