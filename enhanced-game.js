@@ -483,21 +483,25 @@ function updateScreenShake() {
 
 // Level definitions with increasing difficulty
 const levels = [
-    // Level 1: Introduction - Simple platforms
+    // Level 1: Test Level - Enemy Stomp Testing
     {
         platforms: [
             { x: 0, y: 550, width: 800, height: 50 },
-            { x: 200, y: 450, width: 150, height: 20 },
-            { x: 450, y: 350, width: 150, height: 20 },
-            { x: 650, y: 250, width: 150, height: 20 }
+            { x: 200, y: 450, width: 120, height: 20 },
+            { x: 400, y: 350, width: 120, height: 20 },
+            { x: 600, y: 250, width: 120, height: 20 }
         ],
         candies: [
             { x: 250, y: 420, collected: false },
-            { x: 500, y: 320, collected: false },
-            { x: 700, y: 220, collected: false }
+            { x: 450, y: 320, collected: false },
+            { x: 650, y: 220, collected: false }
         ],
         powerUps: [],
-        enemies: [],
+        enemies: [
+            { x: 240, y: 420, width: 30, height: 30, vx: 2, range: 80, startX: 240 }, // Stomp target
+            { x: 440, y: 320, width: 30, height: 30, vx: -1, range: 60, startX: 440 }, // Stomp target
+            { x: 640, y: 220, width: 30, height: 30, vx: 3, range: 100, startX: 640 }  // Stomp target
+        ],
         disappearingPlatforms: [],
         goal: { x: 750, y: 200, width: 50, height: 50 }
     },
@@ -953,7 +957,7 @@ function updatePlayer() {
     });
 
     // Update and check enemies
-    enemies.forEach(enemy => {
+    enemies.forEach((enemy, enemyIndex) => {
         // Move enemy
         enemy.x += enemy.vx;
 
@@ -969,7 +973,61 @@ function updatePlayer() {
             player.y < enemy.y + enemy.height &&
             player.y + player.height > enemy.y) {
 
-            if (player.powerUp === POWER_UPS.SHIELD) {
+            // Check if this is a stomp (player jumping on top of enemy)
+            const playerBottom = player.y + player.height;
+            const enemyTop = enemy.y;
+            const enemyCenter = enemy.y + enemy.height / 2;
+            
+            // Player must be falling and landing on top of enemy
+            const isStomp = player.vy > 0 && playerBottom < enemyCenter;
+
+            if (isStomp) {
+                // STOMP KILL - Player kills enemy by jumping on it
+                playSound('enemyHit');
+                triggerScreenShake(5);
+                
+                // Create explosion effect at enemy position
+                createExplosion(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, '#ff6600', 25);
+                
+                // Create star burst particles for successful stomp
+                createParticles(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, '#ffff00', 15, {
+                    spread: 12,
+                    gravity: 0.1,
+                    life: 1.5,
+                    size: { min: 3, max: 8 },
+                    fade: 0.015,
+                    shape: 'star'
+                });
+                
+                // Award points for killing enemy
+                const enemyPoints = 50;
+                score += enemyPoints;
+                
+                // Add to combo if active
+                if (comboTimer > 0) {
+                    combo++;
+                    comboTimer = SETTINGS.comboTimer;
+                    comboMultiplier = Math.min(combo, 5);
+                } else {
+                    combo = 1;
+                    comboTimer = SETTINGS.comboTimer;
+                    comboMultiplier = 1;
+                }
+                
+                // Bounce player upward slightly
+                player.vy = -10;
+                player.grounded = false;
+                
+                // Remove the enemy
+                enemies.splice(enemyIndex, 1);
+                
+                // Play combo sound if high combo
+                if (combo >= 3 && combo % 3 === 0) {
+                    playSound('combo');
+                    triggerScreenShake(3);
+                }
+                
+            } else if (player.powerUp === POWER_UPS.SHIELD) {
                 // Shield protects, but deactivates power-up
                 player.powerUp = null;
                 player.invincible = true;
@@ -978,7 +1036,7 @@ function updatePlayer() {
                 triggerScreenShake(5);
                 createParticles(player.x + player.width / 2, player.y + player.height / 2, '#00ff00', 25);
             } else {
-                // Take damage
+                // Take damage (hit from side or bottom)
                 player.lives--;
                 playSound('hit');
                 triggerScreenShake(8);
@@ -1111,10 +1169,7 @@ function drawStartScreen() {
     // Princess name
     ctx.fillStyle = '#ffd700';
     ctx.font = 'bold 28px Comic Sans MS';
-    ctx.shadowColor = '#daa520';
-    ctx.shadowBlur = 8;
-    ctx.fillText('✨ Princess Emmaline ✨', canvas.width / 2, 230);
-    ctx.shadowBlur = 0;
+    ctx.fillText('Princess Emmaline', canvas.width / 2, 230);
 
     // Instructions
     ctx.fillStyle = '#333';
@@ -1163,16 +1218,58 @@ function drawCharacter(x, y) {
     const hairColor = '#ffd700';
     const hairHighlight = '#ffed4e';
 
-    // Draw flowing golden hair strands
+    // Hair base position - at the top of the head
     const hairBaseX = x;
     const hairBaseY = y - 10;
 
-    for (let i = 0; i < 8; i++) {
-        const strandOffset = (i - 3.5) * 6;
+    // Draw upward-flowing golden hair (visible on top of head)
+    for (let i = 0; i < 10; i++) {
+        const strandOffset = (i - 4.5) * 5;
+        const waveOffset = Math.sin(hairWaveSpeed + i * 0.4) * 2;
+        const upwardLength = 25 + Math.sin(hairWaveSpeed + i * 0.3) * 8;
+
+        // Main upward hair strand
+        ctx.beginPath();
+        ctx.moveTo(hairBaseX + strandOffset, hairBaseY - 10); // Start from near top of head
+        ctx.bezierCurveTo(
+            hairBaseX + strandOffset + waveOffset, hairBaseY - 15 - upwardLength * 0.3,
+            hairBaseX + strandOffset + waveOffset * 1.5, hairBaseY - 15 - upwardLength * 0.6,
+            hairBaseX + strandOffset + waveOffset, hairBaseY - 15 - upwardLength
+        );
+        ctx.strokeStyle = hairColor;
+        ctx.lineWidth = 3;
+        ctx.lineCap = 'round';
+        ctx.stroke();
+
+        // Highlight strand
+        ctx.beginPath();
+        ctx.moveTo(hairBaseX + strandOffset - 0.5, hairBaseY - 10);
+        ctx.bezierCurveTo(
+            hairBaseX + strandOffset - 0.5 + waveOffset, hairBaseY - 15 - upwardLength * 0.3,
+            hairBaseX + strandOffset - 0.5 + waveOffset * 1.5, hairBaseY - 15 - upwardLength * 0.6,
+            hairBaseX + strandOffset - 1 + waveOffset, hairBaseY - 15 - upwardLength
+        );
+        ctx.strokeStyle = hairHighlight;
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+    }
+
+    // Golden crown/headband
+    ctx.beginPath();
+    ctx.ellipse(hairBaseX, hairBaseY - 10, 23, 7, 0, 0, Math.PI * 2);
+    ctx.fillStyle = hairColor;
+    ctx.fill();
+    ctx.strokeStyle = '#e6b800';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Draw flowing hair strands (behind the character)
+    for (let i = 0; i < 6; i++) {
+        const strandOffset = (i - 2.5) * 8;
         const waveOffset = Math.sin(hairWaveSpeed + i * 0.5) * 2;
         const strandLength = 30 + Math.sin(hairWaveSpeed + i * 0.3) * 5;
 
-        // Main hair strand
+        // Main flowing hair strand
         ctx.beginPath();
         ctx.moveTo(hairBaseX + strandOffset, hairBaseY);
         ctx.bezierCurveTo(
@@ -1197,15 +1294,6 @@ function drawCharacter(x, y) {
         ctx.lineWidth = 2;
         ctx.stroke();
     }
-
-    // Hair headband
-    ctx.beginPath();
-    ctx.ellipse(hairBaseX, hairBaseY - 5, 25, 8, 0, 0, Math.PI * 2);
-    ctx.fillStyle = hairColor;
-    ctx.fill();
-    ctx.strokeStyle = '#e6b800';
-    ctx.lineWidth = 2;
-    ctx.stroke();
 
     // Body
     ctx.fillStyle = '#ff69b4';
