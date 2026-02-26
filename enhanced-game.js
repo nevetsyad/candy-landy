@@ -234,7 +234,7 @@ let player = {
     vx: 0,
     vy: 0,
     speed: 5,
-    jumpPower: -15,
+    jumpPower: -16, // Increased from -15 for better jump feel
     grounded: false,
     lives: 3,
     powerUp: null,
@@ -247,7 +247,14 @@ let player = {
     legAnimation: 0,
     armAnimation: 0,
     bodyBounce: 0,
-    jumpAnimationFrame: 0
+    jumpAnimationFrame: 0,
+    // Platform tracking
+    currentPlatform: null,
+    previousPlatformX: 0,
+    // Enhanced jump mechanics
+    coyoteTime: 0, // Frames to jump after leaving platform
+    jumpBuffer: 0, // Remember jump input before landing
+    canDoubleJump: true
 };
 
 // Combo and scoring system
@@ -266,6 +273,9 @@ const POWER_UPS = {
 
 // Particle system for effects
 let particles = [];
+
+// Player trail system for visual feedback
+let playerTrail = [];
 
 function createParticles(x, y, color, count = 10, options = {}) {
     const defaultOptions = {
@@ -364,14 +374,14 @@ function drawParticles() {
     particles.forEach(p => {
         ctx.globalAlpha = p.life / p.maxLife;
         ctx.fillStyle = p.color;
-        
+
         ctx.save();
         ctx.translate(p.x, p.y);
-        
+
         if (p.rotation !== undefined) {
             ctx.rotate(p.rotation);
         }
-        
+
         switch (p.shape) {
             case 'circle':
                 ctx.beginPath();
@@ -389,8 +399,30 @@ function drawParticles() {
                 ctx.arc(0, 0, p.size, 0, Math.PI * 2);
                 ctx.fill();
         }
-        
+
         ctx.restore();
+    });
+    ctx.globalAlpha = 1.0;
+}
+
+function updatePlayerTrail() {
+    for (let i = playerTrail.length - 1; i >= 0; i--) {
+        playerTrail[i].alpha -= 0.05;
+        if (playerTrail[i].alpha <= 0) {
+            playerTrail.splice(i, 1);
+        }
+    }
+}
+
+function drawPlayerTrail() {
+    playerTrail.forEach(trail => {
+        if (trail.isDoubleJump) {
+            ctx.globalAlpha = trail.alpha * 0.5;
+            ctx.fillStyle = '#00ffff';
+            ctx.beginPath();
+            ctx.arc(trail.x, trail.y, 20, 0, Math.PI * 2);
+            ctx.fill();
+        }
     });
     ctx.globalAlpha = 1.0;
 }
@@ -615,6 +647,9 @@ function loadLevel(levelIndex) {
     // Clear particles
     particles = [];
 
+    // Clear player trail
+    playerTrail = [];
+
     // Reset combo system
     combo = 0;
     comboTimer = 0;
@@ -665,6 +700,20 @@ function updatePlayer() {
         }
     }
 
+    // Coyote time (allow jumping shortly after leaving platform)
+    if (player.grounded) {
+        player.coyoteTime = 6; // 6 frames = 100ms
+    } else {
+        player.coyoteTime--;
+    }
+
+    // Jump buffer (remember jump input for a few frames)
+    if (keys[' '] || keys['Enter'] || keys['ArrowUp']) {
+        player.jumpBuffer = 6; // 6 frames = 100ms
+    } else {
+        player.jumpBuffer--;
+    }
+
     // Movement with power-up speed
     let currentSpeed = player.speed;
     if (player.powerUp === POWER_UPS.SPEED) {
@@ -679,32 +728,49 @@ function updatePlayer() {
         player.vx *= 0.8;
     }
 
-    // Jump and double jump with power-up
-    if ((keys[' '] || keys['Enter'] || keys['ArrowUp']) && player.jumpCount < 2) {
+    // Jump and double jump with power-up (enhanced with coyote time and jump buffer)
+    const canJump = (player.jumpBuffer > 0 || (keys[' '] || keys['Enter'] || keys['ArrowUp'])) &&
+                     ((player.grounded || player.coyoteTime > 0) && player.jumpCount < 2);
+
+    if (canJump) {
         let jumpPower = player.jumpPower;
         if (player.powerUp === POWER_UPS.JUMP) {
             jumpPower = -20;
         }
-        
+
         // Set jump state
-        if (player.grounded) {
+        if (player.grounded || player.coyoteTime > 0) {
             player.jumpState = 'jumping';
             player.jumpCount = 1;
         } else if (player.jumpCount === 1) {
             player.jumpState = 'doubleJump';
             player.jumpCount = 2;
-            jumpPower *= 0.8; // Slightly less power for double jump
+            jumpPower *= 1.0; // Full power for double jump (enhanced for better gameplay)
         }
-        
+
         player.vy = jumpPower;
         player.grounded = false;
+        player.coyoteTime = 0;
+        player.jumpBuffer = 0;
         player.jumpAnimationFrame = 0;
         playSound('jump');
         triggerScreenShake(2);
 
-        // Jump particles
-        createParticles(player.x + player.width / 2, player.y + player.height, '#ff69b4', 
-                        player.jumpCount === 2 ? 12 : 8);
+        // Jump particles with double jump enhancement
+        if (player.jumpCount === 2) {
+            // More spectacular double jump effect
+            createParticles(player.x + player.width / 2, player.y + player.height, '#00ffff', 20);
+            createParticles(player.x + player.width / 2, player.y + player.height, '#ff69b4', 15);
+            // Add to player trail for visual effect
+            playerTrail.push({
+                x: player.x + player.width / 2,
+                y: player.y + player.height / 2,
+                alpha: 1.0,
+                isDoubleJump: true
+            });
+        } else {
+            createParticles(player.x + player.width / 2, player.y + player.height, '#ff69b4', 8);
+        }
     }
 
     // Physics
@@ -748,12 +814,20 @@ function updatePlayer() {
 
     // Platform collision
     player.grounded = false;
-    currentLevelData.platforms.forEach(platform => {
-        // Update moving platforms
-        if (platform.moving) {
-            platform.x = platform.startX + Math.sin(animationFrame * 0.02) * platform.range;
-        }
+    player.currentPlatform = null;
 
+    // Update moving platforms first
+    currentLevelData.platforms.forEach(platform => {
+        if (platform.moving) {
+            const prevX = platform.x;
+            platform.x = platform.startX + Math.sin(animationFrame * 0.02) * platform.range;
+            platform.dx = platform.x - prevX;
+        } else {
+            platform.dx = 0;
+        }
+    });
+
+    currentLevelData.platforms.forEach(platform => {
         if (player.x < platform.x + platform.width &&
             player.x + player.width > platform.x &&
             player.y < platform.y + platform.height &&
@@ -765,13 +839,19 @@ function updatePlayer() {
                 player.grounded = true;
                 player.jumpState = 'grounded';
                 player.jumpCount = 0;
-                
+                player.currentPlatform = platform;
+
                 // Landing particles with screen shake
                 createParticles(player.x + player.width / 2, player.y + player.height, '#87CEEB', 8);
                 triggerScreenShake(1);
             }
         }
     });
+
+    // Move player with platform if standing on one
+    if (player.grounded && player.currentPlatform && player.currentPlatform.dx) {
+        player.x += player.currentPlatform.dx;
+    }
 
     // Disappearing platforms update and collision
     currentLevelData.disappearingPlatforms.forEach(platform => {
@@ -781,6 +861,7 @@ function updatePlayer() {
             platform.visible = !platform.visible;
             platform.timer = 0;
         }
+        platform.dx = 0;
 
         // Only check collision if platform is visible
         if (platform.visible &&
@@ -795,7 +876,8 @@ function updatePlayer() {
                 player.grounded = true;
                 player.jumpState = 'grounded';
                 player.jumpCount = 0;
-                
+                player.currentPlatform = platform;
+
                 // Landing particles with screen shake
                 createParticles(player.x + player.width / 2, player.y + player.height, '#87CEEB', 8);
                 triggerScreenShake(1);
@@ -965,7 +1047,10 @@ function updatePlayer() {
 
     // Update particles
     updateParticles();
-    
+
+    // Update player trail
+    updatePlayerTrail();
+
     // Update screen shake
     updateScreenShake();
 }
@@ -983,6 +1068,7 @@ function resetGame() {
     score = 0;
     currentLevel = 0;
     particles = [];
+    playerTrail = [];
     combo = 0;
     comboTimer = 0;
     comboMultiplier = 1;
@@ -1036,7 +1122,7 @@ function drawStartScreen() {
     ctx.font = '18px Comic Sans MS';
     ctx.textAlign = 'left';
     ctx.fillText('⬅️ ➡️ Arrow Keys - Move', 230, 355);
-    ctx.fillText('⬆️ SPACE - Jump', 230, 385);
+    ctx.fillText('⬆️ SPACE - Jump (Double tap for double jump!)', 230, 385);
     ctx.fillText('🍬 Collect all candies to advance', 230, 415);
     ctx.fillText('⚠️ Avoid enemies and don\'t fall!', 230, 445);
     ctx.fillText('🔊 Keys 0-5 - Adjust volume', 230, 475);
@@ -1062,6 +1148,55 @@ function drawCloud(x, y, size) {
 }
 
 function drawCharacter(x, y) {
+    // Hair animation for start screen
+    const hairWaveSpeed = animationFrame * 0.08;
+    const hairColor = '#ffd700';
+    const hairHighlight = '#ffed4e';
+
+    // Draw flowing golden hair strands
+    const hairBaseX = x;
+    const hairBaseY = y - 10;
+
+    for (let i = 0; i < 8; i++) {
+        const strandOffset = (i - 3.5) * 6;
+        const waveOffset = Math.sin(hairWaveSpeed + i * 0.5) * 2;
+        const strandLength = 30 + Math.sin(hairWaveSpeed + i * 0.3) * 5;
+
+        // Main hair strand
+        ctx.beginPath();
+        ctx.moveTo(hairBaseX + strandOffset, hairBaseY);
+        ctx.bezierCurveTo(
+            hairBaseX + strandOffset + waveOffset, hairBaseY + 10,
+            hairBaseX + strandOffset + waveOffset * 2, hairBaseY + 20,
+            hairBaseX + strandOffset, hairBaseY + strandLength
+        );
+        ctx.strokeStyle = hairColor;
+        ctx.lineWidth = 4;
+        ctx.lineCap = 'round';
+        ctx.stroke();
+
+        // Highlight strand
+        ctx.beginPath();
+        ctx.moveTo(hairBaseX + strandOffset - 1, hairBaseY);
+        ctx.bezierCurveTo(
+            hairBaseX + strandOffset - 1 + waveOffset, hairBaseY + 10,
+            hairBaseX + strandOffset - 1 + waveOffset * 2, hairBaseY + 20,
+            hairBaseX + strandOffset - 2, hairBaseY + strandLength - 5
+        );
+        ctx.strokeStyle = hairHighlight;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+    }
+
+    // Hair headband
+    ctx.beginPath();
+    ctx.ellipse(hairBaseX, hairBaseY - 5, 25, 8, 0, 0, Math.PI * 2);
+    ctx.fillStyle = hairColor;
+    ctx.fill();
+    ctx.strokeStyle = '#e6b800';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
     // Body
     ctx.fillStyle = '#ff69b4';
     ctx.fillRect(x - 20, y, 40, 60);
@@ -1289,6 +1424,9 @@ function drawGame() {
     // Draw particles
     drawParticles();
 
+    // Draw player trail
+    drawPlayerTrail();
+
     // Draw player with power-up effects
     drawPlayer();
 
@@ -1302,57 +1440,87 @@ function drawPlayer() {
     let playerColor = '#ff69b4';
     let hasGlow = false;
 
-    // Power-up visual effects
-    if (player.powerUp === POWER_UPS.SPEED) {
-        hasGlow = true;
-        ctx.fillStyle = 'rgba(255, 255, 0, 0.3)';
-        ctx.beginPath();
-        ctx.arc(player.x + player.width / 2, player.y + player.height / 2, 40, 0, Math.PI * 2);
-        ctx.fill();
-    } else if (player.powerUp === POWER_UPS.JUMP) {
-        hasGlow = true;
-        ctx.fillStyle = 'rgba(0, 255, 255, 0.3)';
-        ctx.beginPath();
-        ctx.arc(player.x + player.width / 2, player.y + player.height / 2, 40, 0, Math.PI * 2);
-        ctx.fill();
-    } else if (player.powerUp === POWER_UPS.SHIELD) {
-        ctx.strokeStyle = '#00ff00';
-        ctx.lineWidth = 4;
-        ctx.beginPath();
-        ctx.arc(player.x + player.width / 2, player.y + player.height / 2, 35, 0, Math.PI * 2);
-        ctx.stroke();
-    } else if (player.powerUp === POWER_UPS.DOUBLE_POINTS) {
-        hasGlow = true;
-        ctx.fillStyle = 'rgba(255, 0, 255, 0.3)';
-        ctx.beginPath();
-        ctx.arc(player.x + player.width / 2, player.y + player.height / 2, 40, 0, Math.PI * 2);
-        ctx.fill();
-    }
+    // Power-up visual effects - REMOVED sparkling/firework effects
+    // (Glow effects around character removed as requested)
 
     // Invincibility blinking
     if (player.invincible && Math.floor(animationFrame / 5) % 2 === 0) {
         return; // Don't draw when blinking
     }
 
-    // Pigtails animation (swaying)
-    const pigtailSway = Math.sin(animationFrame * 0.15) * 5;
+    // Calculate hair animation based on movement
+    const isRunning = Math.abs(player.vx) > 0.1;
+    const isJumping = player.jumpState !== 'grounded';
 
-    // Left pigtail
-    ctx.fillStyle = '#ffd699';
-    ctx.beginPath();
-    ctx.moveTo(player.x + 5, player.y - 5);
-    ctx.lineTo(player.x - 5 - pigtailSway, player.y + 15);
-    ctx.lineTo(player.x - 3 - pigtailSway, player.y + 15);
-    ctx.lineTo(player.x + 8, player.y - 5);
-    ctx.fill();
+    // Hair flow animation parameters
+    let hairFlowOffset = 0;
+    let hairWaveAmplitude = 0;
+    let hairWaveSpeed = 0;
 
-    // Right pigtail
+    if (isRunning) {
+        // Hair flows back when running
+        hairFlowOffset = -Math.abs(player.vx) * 2;
+        hairWaveAmplitude = 3;
+        hairWaveSpeed = animationFrame * 0.2;
+    } else if (isJumping) {
+        // Hair flows up and back when jumping
+        hairFlowOffset = -5;
+        hairWaveAmplitude = 5;
+        hairWaveSpeed = animationFrame * 0.15;
+    } else {
+        // Gentle swaying when standing
+        hairWaveAmplitude = 2;
+        hairWaveSpeed = animationFrame * 0.08;
+    }
+
+    // Draw flowing golden hair
+    const hairColor = '#ffd700'; // Gold color
+    const hairHighlight = '#ffed4e'; // Lighter gold for highlights
+
+    // Hair base position
+    const hairBaseX = player.x + 20;
+    const hairBaseY = player.y - 10;
+
+    // Draw multiple hair strands for flowing effect
+    for (let i = 0; i < 8; i++) {
+        const strandOffset = (i - 3.5) * 6;
+        const waveOffset = Math.sin(hairWaveSpeed + i * 0.5) * hairWaveAmplitude;
+        const strandLength = 30 + Math.sin(hairWaveSpeed + i * 0.3) * 5;
+
+        // Main hair strand
+        ctx.beginPath();
+        ctx.moveTo(hairBaseX + strandOffset, hairBaseY);
+        ctx.bezierCurveTo(
+            hairBaseX + strandOffset + waveOffset + hairFlowOffset * 0.3, hairBaseY + 10,
+            hairBaseX + strandOffset + waveOffset * 2 + hairFlowOffset * 0.6, hairBaseY + 20,
+            hairBaseX + strandOffset + hairFlowOffset, hairBaseY + strandLength
+        );
+        ctx.strokeStyle = hairColor;
+        ctx.lineWidth = 4;
+        ctx.lineCap = 'round';
+        ctx.stroke();
+
+        // Highlight strand
+        ctx.beginPath();
+        ctx.moveTo(hairBaseX + strandOffset - 1, hairBaseY);
+        ctx.bezierCurveTo(
+            hairBaseX + strandOffset - 1 + waveOffset + hairFlowOffset * 0.3, hairBaseY + 10,
+            hairBaseX + strandOffset - 1 + waveOffset * 2 + hairFlowOffset * 0.6, hairBaseY + 20,
+            hairBaseX + strandOffset - 2 + hairFlowOffset, hairBaseY + strandLength - 5
+        );
+        ctx.strokeStyle = hairHighlight;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+    }
+
+    // Hair headband/crown
     ctx.beginPath();
-    ctx.moveTo(player.x + 35, player.y - 5);
-    ctx.lineTo(player.x + 45 + pigtailSway, player.y + 15);
-    ctx.lineTo(player.x + 43 + pigtailSway, player.y + 15);
-    ctx.lineTo(player.x + 33, player.y - 5);
+    ctx.ellipse(hairBaseX, hairBaseY - 5, 25, 8, 0, 0, Math.PI * 2);
+    ctx.fillStyle = hairColor;
     ctx.fill();
+    ctx.strokeStyle = '#e6b800';
+    ctx.lineWidth = 2;
+    ctx.stroke();
 
     // Body
     const bodyGradient = ctx.createLinearGradient(player.x, player.y, player.x + player.width, player.y);
@@ -1449,6 +1617,12 @@ function drawHUD() {
         ctx.font = '16px Comic Sans MS';
         ctx.fillText('⏱️ Bonus: +' + timeBonus, 20, 160);
     }
+
+    // Jump indicator (double jump capability)
+    const jumpsRemaining = 2 - player.jumpCount;
+    ctx.fillStyle = jumpsRemaining > 0 ? '#00ffff' : '#888';
+    ctx.font = '16px Comic Sans MS';
+    ctx.fillText('🦘 Jumps: ' + '⬆️'.repeat(jumpsRemaining), 20, 185);
 
     // Power-up indicator
     if (player.powerUp) {
