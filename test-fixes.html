@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Candy Landy Fixes</title>
+    <style>
+        body {
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+        h1 {
+            color: #ff1493;
+            margin-top: 0;
+        }
+        .test-list {
+            text-align: left;
+            margin: 20px 0;
+            padding: 15px;
+            background: #f0f0f0;
+            border-radius: 5px;
+        }
+        .test-item {
+            margin: 10px 0;
+            padding: 8px;
+            background: white;
+            border-radius: 3px;
+        }
+        canvas {
+            border: 4px solid #ff69b4;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+            margin: 20px 0;
+        }
+        .instructions {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border-left: 4px solid #ffc107;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🍬 Candy Landy - Test Fixes</h1>
+
+        <div class="test-list">
+            <h3>What to Test:</h3>
+            <div class="test-item">✅ Platform Movement: Stand on moving platforms and verify you move with them</div>
+            <div class="test-item">✅ Golden Hair: Check that character has flowing golden hair</div>
+            <div class="test-item">✅ Hair Animation: Run and jump to see hair flow and wave</div>
+            <div class="test-item">✅ Clean Styling: Ensure character is not bold/heavy looking</div>
+        </div>
+
+        <div class="instructions">
+            <strong>Controls:</strong> Arrow keys to move, Space/Up to jump (double jump enabled)<br>
+            <strong>Level 2</strong> has moving platforms - go there to test platform movement!
+        </div>
+
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+
+        <p><em>Open browser console (F12) to see any errors</em></p>
+    </div>
+
+    <script src="enhanced-game.js"></script>
+</body>
+</html>
