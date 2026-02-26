@@ -742,25 +742,26 @@ function updatePlayer() {
         player.vx *= 0.8;
     }
 
-    // Jump and double jump with power-up (enhanced with coyote time and jump buffer)
-    // First jump requires being grounded (or coyote time), second jump can be done anywhere
+    // Jump and double jump with proper separation
+    // First jump: normal power when grounded
+    // Second jump: additional boost when in air
     const canJump = (player.jumpBuffer > 0 || (keys[' '] || keys['Enter'] || keys['ArrowUp'])) &&
                      ((player.grounded || player.coyoteTime > 0 || player.jumpCount === 1) && player.jumpCount < 2);
 
     if (canJump) {
-        let jumpPower = player.jumpPower;
-
-        // Set jump state
+        // First jump: normal power from ground
         if (player.grounded || player.coyoteTime > 0) {
             player.jumpState = 'jumping';
             player.jumpCount = 1;
-        } else if (player.jumpCount === 1) {
+            player.vy = -15; // Normal first jump power
+        } 
+        // Second jump: additional boost while in air
+        else if (player.jumpCount === 1) {
             player.jumpState = 'doubleJump';
             player.jumpCount = 2;
-            jumpPower *= 1.5; // Enhanced double jump for reaching higher areas (increased from 1.3 to 1.5)
+            player.vy = -10; // Additional boost for second jump
         }
 
-        player.vy = jumpPower;
         player.grounded = false;
         player.coyoteTime = 0;
         player.jumpBuffer = 0;
