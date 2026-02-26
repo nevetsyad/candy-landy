@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Candy Landy - Test Current Version</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fecfef 100%);
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+        #gameContainer {
+            border: 4px solid #ff69b4;
+            border-radius: 15px;
+            box-shadow: 0 0 30px rgba(255, 105, 180, 0.6);
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px;
+        }
+        #gameCanvas {
+            display: block;
+            background: #87CEEB;
+            border-radius: 10px;
+        }
+        #status {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+            border: 2px solid #ff69b4;
+            max-width: 800px;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+    </div>
+    <div id="status">
+        <h2>Test Status</h2>
+        <p>Loading game...</p>
+    </div>
+    <script>
+        const statusDiv = document.getElementById('status');
+        
+        try {
+            // Test 1: Canvas element exists
+            const canvas = document.getElementById('gameCanvas');
+            if (!canvas) {
+                throw new Error('Canvas element not found');
+            }
+            
+            // Test 2: Load the enhanced game
+            const gameScript = document.createElement('script');
+            gameScript.src = 'enhanced-game.js';
+            gameScript.onload = function() {
+                statusDiv.innerHTML = `
+                    <h2 style="color: green;">✅ Game Loaded Successfully!</h2>
+                    <p>The game script has been loaded without errors.</p>
+                    <p><strong>Current Features:</strong></p>
+                    <ul>
+                        <li>3 progressive levels</li>
+                        <li>Sound effects (jump, collect, power-up, hit, level complete, game over)</li>
+                        <li>Background music</li>
+                        <li>3 power-up types (Speed, Jump, Shield, Double Points)</li>
+                        <li>Enemies with patrol behavior</li>
+                        <li>Particle effects for collection and actions</li>
+                        <li>High score tracking with localStorage</li>
+                        <li>Moving platforms</li>
+                        <li>Pause functionality</li>
+                    </ul>
+                    <p><strong>Controls:</strong></p>
+                    <ul>
+                        <li>← → Arrow Keys to move</li>
+                        <li>SPACE/↑ to jump</li>
+                        <li>ESC to pause</li>
+                        <li>R to restart (on game over)</li>
+                    </ul>
+                    <p style="color: #ff1493; font-weight: bold;">Click the game area and press SPACE to start!</p>
+                `;
+            };
+            gameScript.onerror = function() {
+                statusDiv.innerHTML = `<h2 style="color: red;">❌ Error loading game!</h2><p>Failed to load enhanced-game.js</p>`;
+            };
+            document.head.appendChild(gameScript);
+        } catch (error) {
+            statusDiv.innerHTML = `<h2 style="color: red;">❌ Error!</h2><p>${error.message}</p>`;
+        }
+    </script>
+</body>
+</html>
