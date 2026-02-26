@@ -761,22 +761,6 @@ function updatePlayer() {
         player.jumpAnimationFrame = 0;
         playSound('jump');
         triggerScreenShake(2);
-
-        // Jump particles with double jump enhancement
-        if (player.jumpCount === 2) {
-            // More spectacular double jump effect
-            createParticles(player.x + player.width / 2, player.y + player.height, '#00ffff', 20);
-            createParticles(player.x + player.width / 2, player.y + player.height, '#ff69b4', 15);
-            // Add to player trail for visual effect
-            playerTrail.push({
-                x: player.x + player.width / 2,
-                y: player.y + player.height / 2,
-                alpha: 1.0,
-                isDoubleJump: true
-            });
-        } else {
-            createParticles(player.x + player.width / 2, player.y + player.height, '#ff69b4', 8);
-        }
     }
 
     // Physics
@@ -847,8 +831,6 @@ function updatePlayer() {
                 player.jumpCount = 0;
                 player.currentPlatform = platform;
 
-                // Landing particles with screen shake
-                createParticles(player.x + player.width / 2, player.y + player.height, '#87CEEB', 8);
                 triggerScreenShake(1);
             }
         }
@@ -884,8 +866,6 @@ function updatePlayer() {
                 player.jumpCount = 0;
                 player.currentPlatform = platform;
 
-                // Landing particles with screen shake
-                createParticles(player.x + player.width / 2, player.y + player.height, '#87CEEB', 8);
                 triggerScreenShake(1);
             }
         }
@@ -1034,13 +1014,11 @@ function updatePlayer() {
                 player.invincibleTimer = 60; // 1 second
                 playSound('shield');
                 triggerScreenShake(5);
-                createParticles(player.x + player.width / 2, player.y + player.height / 2, '#00ff00', 25);
             } else {
                 // Take damage (hit from side or bottom)
                 player.lives--;
                 playSound('hit');
                 triggerScreenShake(8);
-                createExplosion(player.x + player.width / 2, player.y + player.height / 2, '#ff0000', 20);
 
                 if (player.lives <= 0) {
                     gameState = 'gameover';
