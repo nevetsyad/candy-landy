@@ -754,12 +754,12 @@ function updatePlayer() {
             player.jumpState = 'jumping';
             player.jumpCount = 1;
             player.vy = -15; // Normal first jump power
-        } 
+        }
         // Second jump: additional boost while in air
         else if (player.jumpCount === 1) {
             player.jumpState = 'doubleJump';
             player.jumpCount = 2;
-            player.vy = -10; // Additional boost for second jump
+            player.vy -= 10; // Add extra upward force for double jump (subtracts from negative velocity)
         }
 
         player.grounded = false;
