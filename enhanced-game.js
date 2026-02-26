@@ -417,10 +417,11 @@ function updatePlayerTrail() {
 function drawPlayerTrail() {
     playerTrail.forEach(trail => {
         if (trail.isDoubleJump) {
-            ctx.globalAlpha = trail.alpha * 0.5;
+            // Removed glow/radiating effect - just a small dot for visual feedback
+            ctx.globalAlpha = trail.alpha * 0.3;
             ctx.fillStyle = '#00ffff';
             ctx.beginPath();
-            ctx.arc(trail.x, trail.y, 20, 0, Math.PI * 2);
+            ctx.arc(trail.x, trail.y, 3, 0, Math.PI * 2);
             ctx.fill();
         }
     });
@@ -729,8 +730,9 @@ function updatePlayer() {
     }
 
     // Jump and double jump with power-up (enhanced with coyote time and jump buffer)
+    // First jump requires being grounded (or coyote time), second jump can be done anywhere
     const canJump = (player.jumpBuffer > 0 || (keys[' '] || keys['Enter'] || keys['ArrowUp'])) &&
-                     ((player.grounded || player.coyoteTime > 0) && player.jumpCount < 2);
+                     ((player.grounded || player.coyoteTime > 0 || player.jumpCount === 1) && player.jumpCount < 2);
 
     if (canJump) {
         let jumpPower = player.jumpPower;
@@ -1481,21 +1483,62 @@ function drawPlayer() {
         hairWaveSpeed = animationFrame * 0.08;
     }
 
-    // Draw flowing golden hair
+    // Draw golden hair on top of head
     const hairColor = '#ffd700'; // Gold color
     const hairHighlight = '#ffed4e'; // Lighter gold for highlights
 
-    // Hair base position
+    // Hair base position - at the top of the head
     const hairBaseX = player.x + 20;
-    const hairBaseY = player.y - 10;
+    const hairBaseY = player.y - 15; // Center of head, hair will extend upward
 
-    // Draw multiple hair strands for flowing effect
-    for (let i = 0; i < 8; i++) {
-        const strandOffset = (i - 3.5) * 6;
+    // Draw upward-flowing golden hair (visible on top of head)
+    for (let i = 0; i < 10; i++) {
+        const strandOffset = (i - 4.5) * 5;
+        const waveOffset = Math.sin(hairWaveSpeed + i * 0.4) * hairWaveAmplitude;
+        const upwardLength = 25 + Math.sin(hairWaveSpeed + i * 0.3) * 8;
+
+        // Main upward hair strand
+        ctx.beginPath();
+        ctx.moveTo(hairBaseX + strandOffset, hairBaseY - 10); // Start from near top of head
+        ctx.bezierCurveTo(
+            hairBaseX + strandOffset + waveOffset + hairFlowOffset * 0.2, hairBaseY - 15 - upwardLength * 0.3,
+            hairBaseX + strandOffset + waveOffset * 1.5 + hairFlowOffset * 0.4, hairBaseY - 15 - upwardLength * 0.6,
+            hairBaseX + strandOffset + waveOffset + hairFlowOffset * 0.5, hairBaseY - 15 - upwardLength
+        );
+        ctx.strokeStyle = hairColor;
+        ctx.lineWidth = 3;
+        ctx.lineCap = 'round';
+        ctx.stroke();
+
+        // Highlight strand
+        ctx.beginPath();
+        ctx.moveTo(hairBaseX + strandOffset - 0.5, hairBaseY - 10);
+        ctx.bezierCurveTo(
+            hairBaseX + strandOffset - 0.5 + waveOffset + hairFlowOffset * 0.2, hairBaseY - 15 - upwardLength * 0.3,
+            hairBaseX + strandOffset - 0.5 + waveOffset * 1.5 + hairFlowOffset * 0.4, hairBaseY - 15 - upwardLength * 0.6,
+            hairBaseX + strandOffset - 1 + waveOffset + hairFlowOffset * 0.5, hairBaseY - 15 - upwardLength
+        );
+        ctx.strokeStyle = hairHighlight;
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+    }
+
+    // Golden crown/headband
+    ctx.beginPath();
+    ctx.ellipse(hairBaseX, hairBaseY - 10, 23, 7, 0, 0, Math.PI * 2);
+    ctx.fillStyle = hairColor;
+    ctx.fill();
+    ctx.strokeStyle = '#e6b800';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Draw flowing hair strands (behind the character)
+    for (let i = 0; i < 6; i++) {
+        const strandOffset = (i - 2.5) * 8;
         const waveOffset = Math.sin(hairWaveSpeed + i * 0.5) * hairWaveAmplitude;
-        const strandLength = 30 + Math.sin(hairWaveSpeed + i * 0.3) * 5;
+        const strandLength = 25 + Math.sin(hairWaveSpeed + i * 0.3) * 5;
 
-        // Main hair strand
+        // Main flowing hair strand
         ctx.beginPath();
         ctx.moveTo(hairBaseX + strandOffset, hairBaseY);
         ctx.bezierCurveTo(
@@ -1520,15 +1563,6 @@ function drawPlayer() {
         ctx.lineWidth = 2;
         ctx.stroke();
     }
-
-    // Hair headband/crown
-    ctx.beginPath();
-    ctx.ellipse(hairBaseX, hairBaseY - 5, 25, 8, 0, 0, Math.PI * 2);
-    ctx.fillStyle = hairColor;
-    ctx.fill();
-    ctx.strokeStyle = '#e6b800';
-    ctx.lineWidth = 2;
-    ctx.stroke();
 
     // Body
     const bodyGradient = ctx.createLinearGradient(player.x, player.y, player.x + player.width, player.y);
