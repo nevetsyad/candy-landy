@@ -13,6 +13,11 @@ let highScore = localStorage.getItem('candyLandyHighScore') || 0;
 let currentLevel = 0;
 let animationFrame = 0;
 
+// High score management
+let highScores = JSON.parse(localStorage.getItem('candyLandyHighScores')) || [];
+let initialsInput = '';
+let isEnteringInitials = false;
+
 // Audio Context for sound effects
 let audioContext = null;
 let backgroundMusic = null;
@@ -237,8 +242,6 @@ let player = {
     jumpPower: -16, // Increased from -15 for better jump feel
     grounded: false,
     lives: 3,
-    powerUp: null,
-    powerUpTimer: 0,
     invincible: false,
     invincibleTimer: 0,
     // Animation states
@@ -263,13 +266,7 @@ let comboTimer = 0;
 let comboMultiplier = 1;
 let timeBonus = 0;
 
-// Power-up types
-const POWER_UPS = {
-    SPEED: 'speed',
-    JUMP: 'jump',
-    SHIELD: 'shield',
-    DOUBLE_POINTS: 'double'
-};
+// Power-up types removed - now using extra lives instead
 
 // Particle system for effects
 let particles = [];
@@ -522,7 +519,7 @@ const levels = [
             { x: 350, y: 520, collected: false }
         ],
         powerUps: [
-            { x: 280, y: 420, type: POWER_UPS.JUMP, collected: false }
+            { x: 280, y: 420, type: 'extraLife', collected: false }
         ],
         enemies: [
             { x: 450, y: 310, width: 30, height: 30, vx: 2, range: 100, startX: 450 }
@@ -555,9 +552,9 @@ const levels = [
             { x: 100, y: 520, collected: false }
         ],
         powerUps: [
-            { x: 270, y: 320, type: POWER_UPS.SPEED, collected: false },
-            { x: 750, y: 120, type: POWER_UPS.SHIELD, collected: false },
-            { x: 350, y: 520, type: POWER_UPS.DOUBLE_POINTS, collected: false }
+            { x: 270, y: 320, type: 'extraLife', collected: false },
+            { x: 750, y: 120, type: 'extraLife', collected: false },
+            { x: 350, y: 520, type: 'extraLife', collected: false }
         ],
         enemies: [
             { x: 200, y: 320, width: 30, height: 30, vx: 3, range: 120, startX: 200 },
@@ -618,6 +615,22 @@ document.addEventListener('keydown', (e) => {
             startBackgroundMusic(); // Restart with new volume
         }
     }
+
+    // Initials input for high score
+    if (isEnteringInitials) {
+        if (e.key === 'Enter' && initialsInput.length === 3) {
+            // Save the high score
+            saveHighScore(initialsInput, score);
+            isEnteringInitials = false;
+            initialsInput = '';
+            gameState = 'start';
+            resetGame();
+        } else if (e.key === 'Backspace') {
+            initialsInput = initialsInput.slice(0, -1);
+        } else if (e.key.length === 1 && initialsInput.length < 3 && /[A-Za-z0-9]/.test(e.key)) {
+            initialsInput += e.key.toUpperCase();
+        }
+    }
 });
 
 document.addEventListener('keyup', (e) => {
@@ -633,6 +646,11 @@ function loadLevel(levelIndex) {
         playSound('levelComplete');
         triggerScreenShake(10);
         createConfetti(canvas.width / 2, canvas.height / 2, 50);
+
+        // Check if score qualifies for high score board
+        if (qualifiesForHighScore(score)) {
+            isEnteringInitials = true;
+        }
         return;
     }
 
@@ -680,13 +698,7 @@ function loadLevel(levelIndex) {
 function updatePlayer() {
     if (gameState !== 'playing') return;
 
-    // Power-up timer
-    if (player.powerUp) {
-        player.powerUpTimer--;
-        if (player.powerUpTimer <= 0) {
-            player.powerUp = null;
-        }
-    }
+    // Power-up system removed - now using extra lives instead
 
     // Invincibility timer
     if (player.invincible) {
@@ -719,11 +731,8 @@ function updatePlayer() {
         player.jumpBuffer--;
     }
 
-    // Movement with power-up speed
+    // Movement
     let currentSpeed = player.speed;
-    if (player.powerUp === POWER_UPS.SPEED) {
-        currentSpeed = 8;
-    }
 
     if (keys['ArrowLeft']) {
         player.vx = -currentSpeed;
@@ -740,9 +749,6 @@ function updatePlayer() {
 
     if (canJump) {
         let jumpPower = player.jumpPower;
-        if (player.powerUp === POWER_UPS.JUMP) {
-            jumpPower = -20;
-        }
 
         // Set jump state
         if (player.grounded || player.coyoteTime > 0) {
@@ -751,7 +757,7 @@ function updatePlayer() {
         } else if (player.jumpCount === 1) {
             player.jumpState = 'doubleJump';
             player.jumpCount = 2;
-            jumpPower *= 1.0; // Full power for double jump (enhanced for better gameplay)
+            jumpPower *= 1.5; // Enhanced double jump for reaching higher areas (increased from 1.3 to 1.5)
         }
 
         player.vy = jumpPower;
@@ -901,9 +907,6 @@ function updatePlayer() {
             }
 
             let points = 10 * comboMultiplier;
-            if (player.powerUp === POWER_UPS.DOUBLE_POINTS) {
-                points = 20 * comboMultiplier;
-            }
             score += points;
 
             // Time bonus for quick collection
@@ -919,7 +922,7 @@ function updatePlayer() {
         }
     });
 
-    // Collect power-ups
+    // Collect extra lives (converted from power-ups)
     powerUps.forEach((powerUp, index) => {
         if (!powerUp.collected &&
             player.x < powerUp.x + 20 &&
@@ -928,11 +931,10 @@ function updatePlayer() {
             player.y + player.height > powerUp.y) {
 
             powerUp.collected = true;
-            player.powerUp = powerUp.type;
-            player.powerUpTimer = 300; // 5 seconds at 60fps
-            playSound('powerup');
+            player.lives++; // Give extra life instead of power-up
+            playSound('collect');
             triggerScreenShake(3);
-            createExplosion(powerUp.x + 10, powerUp.y + 10, '#00ff00', 15);
+            createExplosion(powerUp.x + 10, powerUp.y + 10, '#ff69b4', 15);
         }
     });
 
@@ -1007,13 +1009,6 @@ function updatePlayer() {
                     triggerScreenShake(3);
                 }
                 
-            } else if (player.powerUp === POWER_UPS.SHIELD) {
-                // Shield protects, but deactivates power-up
-                player.powerUp = null;
-                player.invincible = true;
-                player.invincibleTimer = 60; // 1 second
-                playSound('shield');
-                triggerScreenShake(5);
             } else {
                 // Take damage (hit from side or bottom)
                 player.lives--;
@@ -1029,6 +1024,11 @@ function updatePlayer() {
                     if (score > highScore) {
                         highScore = score;
                         localStorage.setItem('candyLandyHighScore', highScore);
+                    }
+
+                    // Check if score qualifies for high score board
+                    if (qualifiesForHighScore(score)) {
+                        isEnteringInitials = true;
                     }
                 } else {
                     // Reset position
@@ -1073,6 +1073,11 @@ function updatePlayer() {
                 highScore = score;
                 localStorage.setItem('candyLandyHighScore', highScore);
             }
+
+            // Check if score qualifies for high score board
+            if (qualifiesForHighScore(score)) {
+                isEnteringInitials = true;
+            }
         } else {
             player.x = 100;
             player.y = 400;
@@ -1111,7 +1116,30 @@ function resetGame() {
     comboTimer = 0;
     comboMultiplier = 1;
     timeBonus = 0;
+    initialsInput = '';
+    isEnteringInitials = false;
     stopBackgroundMusic();
+}
+
+// Save high score with initials
+function saveHighScore(initials, scoreValue) {
+    const newScore = {
+        initials: initials.toUpperCase(),
+        score: scoreValue,
+        date: new Date().toISOString().split('T')[0] // YYYY-MM-DD format
+    };
+    
+    highScores.push(newScore);
+    highScores.sort((a, b) => b.score - a.score); // Sort by score descending
+    highScores = highScores.slice(0, 10); // Keep only top 10
+    
+    localStorage.setItem('candyLandyHighScores', JSON.stringify(highScores));
+}
+
+// Check if score qualifies for high score
+function qualifiesForHighScore(scoreValue) {
+    if (highScores.length < 10) return true;
+    return scoreValue > highScores[highScores.length - 1].score;
 }
 
 // Drawing functions
@@ -1176,9 +1204,28 @@ function drawStartScreen() {
     ctx.font = '20px Comic Sans MS';
     ctx.fillText('🏆 High Score: ' + highScore, canvas.width / 2, 520);
 
-    // Animated character
-    const bounce = Math.sin(animationFrame * 0.1) * 10;
-    drawCharacter(canvas.width / 2, 480 + bounce);
+    // High scores board
+    if (highScores.length > 0) {
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+        ctx.fillRect(150, 540, 500, 120);
+        ctx.strokeStyle = '#ff69b4';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(150, 540, 500, 120);
+
+        ctx.fillStyle = '#ff1493';
+        ctx.font = 'bold 18px Comic Sans MS';
+        ctx.textAlign = 'center';
+        ctx.fillText('🏆 HIGH SCORES 🏆', canvas.width / 2, 565);
+
+        ctx.font = '14px Comic Sans MS';
+        ctx.textAlign = 'left';
+        
+        highScores.slice(0, 5).forEach((score, index) => {
+            const y = 585 + index * 18;
+            ctx.fillStyle = index === 0 ? '#ffd700' : '#333';
+            ctx.fillText(`${index + 1}. ${score.initials} - ${score.score}`, 170, y);
+        });
+    }
 }
 
 function drawCloud(x, y, size) {
@@ -1420,35 +1467,28 @@ function drawGame() {
         }
     });
 
-    // Draw power-ups
+    // Draw extra lives (converted from power-ups)
     powerUps.forEach(powerUp => {
         if (!powerUp.collected) {
             const bounce = Math.sin(animationFrame * 0.08) * 5;
 
-            // Power-up glow
-            let glowColor;
-            switch(powerUp.type) {
-                case POWER_UPS.JUMP: glowColor = 'rgba(0, 255, 255, 0.3)'; break;
-                case POWER_UPS.SPEED: glowColor = 'rgba(255, 255, 0, 0.3)'; break;
-                case POWER_UPS.SHIELD: glowColor = 'rgba(0, 255, 0, 0.3)'; break;
-                case POWER_UPS.DOUBLE_POINTS: glowColor = 'rgba(255, 0, 255, 0.3)'; break;
-            }
-            ctx.fillStyle = glowColor;
+            // Extra life glow (pink color)
+            ctx.fillStyle = 'rgba(255, 105, 180, 0.3)';
             ctx.beginPath();
             ctx.arc(powerUp.x + 10, powerUp.y + 10 + bounce, 18, 0, Math.PI * 2);
             ctx.fill();
 
-            // Power-up icon
+            // Extra life background
             ctx.fillStyle = '#fff';
             ctx.beginPath();
             ctx.arc(powerUp.x + 10, powerUp.y + 10 + bounce, 12, 0, Math.PI * 2);
             ctx.fill();
 
-            // Power-up symbol
-            ctx.fillStyle = '#333';
-            ctx.font = 'bold 14px Arial';
+            // Extra life heart symbol
+            ctx.fillStyle = '#ff1493';
+            ctx.font = 'bold 16px Arial';
             ctx.textAlign = 'center';
-            ctx.fillText('⚡', powerUp.x + 10, powerUp.y + 15 + bounce);
+            ctx.fillText('❤️', powerUp.x + 10, powerUp.y + 16 + bounce);
         }
     });
 
@@ -1688,64 +1728,61 @@ function drawPlayer() {
 }
 
 function drawHUD() {
-    // HUD background
+    // HUD background - positioned in lower right
+    const hudWidth = 280;
+    const hudHeight = 190;
+    const hudX = canvas.width - hudWidth - 10;
+    const hudY = canvas.height - hudHeight - 10;
+    
     ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-    ctx.fillRect(10, 10, 280, 190);
+    ctx.fillRect(hudX, hudY, hudWidth, hudHeight);
     ctx.strokeStyle = '#ff69b4';
     ctx.lineWidth = 2;
-    ctx.strokeRect(10, 10, 280, 190);
+    ctx.strokeRect(hudX, hudY, hudWidth, hudHeight);
 
     // Score
     ctx.fillStyle = '#ff1493';
     ctx.font = 'bold 20px Comic Sans MS';
     ctx.textAlign = 'left';
-    ctx.fillText('🍬 Score: ' + score, 20, 40);
+    ctx.fillText('🍬 Score: ' + score, hudX + 10, hudY + 30);
 
     // Lives
-    ctx.fillText('❤️ Lives: ' + '❤️'.repeat(player.lives), 20, 65);
+    ctx.fillText('❤️ Lives: ' + '❤️'.repeat(player.lives), hudX + 10, hudY + 55);
 
     // Princess name
     ctx.fillStyle = '#ffd700';
     ctx.font = 'bold 16px Comic Sans MS';
-    ctx.fillText('👑 Princess Emmaline', 20, 90);
+    ctx.fillText('👑 Princess Emmaline', hudX + 10, hudY + 80);
 
     // Level
-    ctx.fillText('🎮 Level: ' + (currentLevel + 1) + '/' + levels.length, 20, 110);
+    ctx.fillText('🎮 Level: ' + (currentLevel + 1) + '/' + levels.length, hudX + 10, hudY + 100);
 
     // Candies remaining
     const collected = currentLevelData.candies.filter(c => c.collected).length;
     const total = currentLevelData.candies.length;
-    ctx.fillText('🍭 Candies: ' + collected + '/' + total, 20, 130);
+    ctx.fillText('🍭 Candies: ' + collected + '/' + total, hudX + 10, hudY + 120);
 
     // Combo display
     if (combo > 1) {
         ctx.fillStyle = '#ffd700';
         ctx.font = 'bold 18px Comic Sans MS';
-        ctx.fillText('🔥 ' + combo + 'x COMBO!', 20, 150);
+        ctx.fillText('🔥 ' + combo + 'x COMBO!', hudX + 10, hudY + 140);
     }
 
     // Time bonus
     if (timeBonus > 0) {
         ctx.fillStyle = '#00ff00';
         ctx.font = '16px Comic Sans MS';
-        ctx.fillText('⏱️ Bonus: +' + timeBonus, 20, 170);
+        ctx.fillText('⏱️ Bonus: +' + timeBonus, hudX + 10, hudY + 160);
     }
 
     // Jump indicator (double jump capability)
     const jumpsRemaining = 2 - player.jumpCount;
     ctx.fillStyle = jumpsRemaining > 0 ? '#00ffff' : '#888';
     ctx.font = '16px Comic Sans MS';
-    ctx.fillText('🦘 Jumps: ' + '⬆️'.repeat(jumpsRemaining), 20, 190);
+    ctx.fillText('🦘 Jumps: ' + '⬆️'.repeat(jumpsRemaining), hudX + 10, hudY + 180);
 
-    // Power-up indicator
-    if (player.powerUp) {
-        ctx.fillStyle = 'rgba(0, 255, 0, 0.9)';
-        ctx.fillRect(canvas.width - 120, 10, 110, 40);
-        ctx.fillStyle = '#fff';
-        ctx.font = 'bold 14px Comic Sans MS';
-        ctx.textAlign = 'center';
-        ctx.fillText('⚡ ' + player.powerUp.toUpperCase(), canvas.width - 65, 35);
-    }
+    // Power-up indicator removed - now using extra lives instead
 
     // Volume indicator
     ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
@@ -1817,10 +1854,25 @@ function drawGameOverScreen() {
         ctx.fillText('🎉 NEW HIGH SCORE! 🎉', canvas.width / 2, 400);
     }
 
-    // Restart instruction
-    ctx.fillStyle = '#fff';
-    ctx.font = '24px Comic Sans MS';
-    ctx.fillText('Press R to Restart', canvas.width / 2, 460);
+    // Initials input for high score
+    if (isEnteringInitials) {
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 24px Comic Sans MS';
+        ctx.fillText('🏆 NEW HIGH SCORE! Enter 3 initials:', canvas.width / 2, 400);
+        
+        ctx.fillStyle = '#ffd700';
+        ctx.font = 'bold 32px Comic Sans MS';
+        ctx.fillText(initialsInput + '_'.repeat(3 - initialsInput.length), canvas.width / 2, 440);
+        
+        ctx.fillStyle = '#fff';
+        ctx.font = '18px Comic Sans MS';
+        ctx.fillText('Press ENTER to save', canvas.width / 2, 480);
+    } else {
+        // Restart instruction
+        ctx.fillStyle = '#fff';
+        ctx.font = '24px Comic Sans MS';
+        ctx.fillText('Press R to Restart', canvas.width / 2, 460);
+    }
 
     // Volume indicator
     ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
@@ -1889,9 +1941,24 @@ function drawVictoryScreen() {
         ctx.fillText('🏆 NEW HIGH SCORE! 🏆', canvas.width / 2, 360);
     }
 
-    ctx.fillStyle = '#fff';
-    ctx.font = '24px Comic Sans MS';
-    ctx.fillText('Press R to Play Again', canvas.width / 2, 420);
+    // Initials input for high score
+    if (isEnteringInitials) {
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 24px Comic Sans MS';
+        ctx.fillText('🏆 NEW HIGH SCORE! Enter 3 initials:', canvas.width / 2, 400);
+        
+        ctx.fillStyle = '#ffd700';
+        ctx.font = 'bold 32px Comic Sans MS';
+        ctx.fillText(initialsInput + '_'.repeat(3 - initialsInput.length), canvas.width / 2, 440);
+        
+        ctx.fillStyle = '#fff';
+        ctx.font = '18px Comic Sans MS';
+        ctx.fillText('Press ENTER to save', canvas.width / 2, 480);
+    } else {
+        ctx.fillStyle = '#fff';
+        ctx.font = '24px Comic Sans MS';
+        ctx.fillText('Press R to Play Again', canvas.width / 2, 420);
+    }
 
     // Volume indicator
     ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
