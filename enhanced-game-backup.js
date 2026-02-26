@@ -25,10 +25,7 @@ const sounds = {
     powerup: null,
     hit: null,
     levelComplete: null,
-    gameOver: null,
-    combo: null,
-    shield: null,
-    enemyHit: null
+    gameOver: null
 };
 
 // Initialize audio
@@ -111,57 +108,14 @@ function playSound(type) {
             oscillator.start(audioContext.currentTime);
             oscillator.stop(audioContext.currentTime + 0.5);
             break;
-        case 'combo':
-            // Play ascending notes for combo
-            const comboNotes = [523, 659, 784, 1047, 1319];
-            comboNotes.forEach((freq, i) => {
-                const osc = audioContext.createOscillator();
-                const gain = audioContext.createGain();
-                osc.connect(gain);
-                gain.connect(audioContext.destination);
-                osc.frequency.setValueAtTime(freq, audioContext.currentTime + i * 0.1);
-                gain.gain.setValueAtTime(0.15 * volumeGain, audioContext.currentTime + i * 0.1);
-                gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + i * 0.1 + 0.1);
-                osc.start(audioContext.currentTime + i * 0.1);
-                osc.stop(audioContext.currentTime + i * 0.1 + 0.1);
-            });
-            break;
-        case 'shield':
-            oscillator.type = 'sine';
-            oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
-            oscillator.frequency.exponentialRampToValueAtTime(400, audioContext.currentTime + 0.3);
-            gainNode.gain.setValueAtTime(0.4 * volumeGain, audioContext.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
-            oscillator.start(audioContext.currentTime);
-            oscillator.stop(audioContext.currentTime + 0.3);
-            break;
-        case 'enemyHit':
-            oscillator.type = 'triangle';
-            oscillator.frequency.setValueAtTime(300, audioContext.currentTime);
-            oscillator.frequency.exponentialRampToValueAtTime(150, audioContext.currentTime + 0.2);
-            gainNode.gain.setValueAtTime(0.5 * volumeGain, audioContext.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
-            oscillator.start(audioContext.currentTime);
-            oscillator.stop(audioContext.currentTime + 0.2);
-            break;
     }
 }
 
-// Background music (enhanced melody)
+// Background music (simple melody)
 let musicInterval = null;
 let musicNoteIndex = 0;
-const melody = [262, 294, 330, 349, 392, 440, 494, 523, 587, 659, 698, 784, 880, 988, 1047];
-const melodyDurations = [0.25, 0.25, 0.25, 0.25, 0.3, 0.3, 0.3, 0.4, 0.3, 0.3, 0.25, 0.25, 0.3, 0.3, 0.5];
-const chordProgression = [
-    [262, 330, 392], // C major
-    [294, 369, 440], // D minor
-    [330, 415, 494], // E minor
-    [349, 440, 523], // F major
-    [392, 494, 588], // G major
-    [440, 554, 659], // A minor
-    [494, 622, 740], // B diminished
-    [523, 659, 784]  // C major
-];
+const melody = [262, 294, 330, 349, 392, 440, 494, 523];
+const melodyDurations = [0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.6];
 
 function startBackgroundMusic() {
     if (isMusicPlaying) return;
@@ -171,44 +125,18 @@ function startBackgroundMusic() {
     function playNextNote() {
         if (!isMusicPlaying) return;
 
-        // Play chord notes for richer sound
-        const chordIndex = Math.floor(musicNoteIndex / 2) % chordProgression.length;
-        const chord = chordProgression[chordIndex];
-        const noteIndex = musicNoteIndex % chord.length;
+        const osc = audioContext.createOscillator();
+        const gain = audioContext.createGain();
+        osc.connect(gain);
+        gain.connect(audioContext.destination);
 
-        // Play chord notes with slight timing variation for richness
-        chord.forEach((freq, i) => {
-            const osc = audioContext.createOscillator();
-            const gain = audioContext.createGain();
-            osc.connect(gain);
-            gain.connect(audioContext.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(melody[musicNoteIndex], audioContext.currentTime);
+        gain.gain.setValueAtTime(0.1 * SETTINGS.volume, audioContext.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + melodyDurations[musicNoteIndex]);
 
-            osc.type = 'sine';
-            const noteDelay = i * 0.02; // Stagger chord notes
-            osc.frequency.setValueAtTime(freq, audioContext.currentTime + noteDelay);
-            gain.gain.setValueAtTime(0.08 * SETTINGS.volume, audioContext.currentTime + noteDelay);
-            gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + melodyDurations[musicNoteIndex]);
-
-            osc.start(audioContext.currentTime + noteDelay);
-            osc.stop(audioContext.currentTime + melodyDurations[musicNoteIndex] + noteDelay);
-        });
-
-        // Add occasional bass notes
-        if (musicNoteIndex % 4 === 0) {
-            const bassOsc = audioContext.createOscillator();
-            const bassGain = audioContext.createGain();
-            bassOsc.connect(bassGain);
-            bassGain.connect(audioContext.destination);
-
-            bassOsc.type = 'sine';
-            const bassFreq = chord[0] / 2; // Octave lower
-            bassOsc.frequency.setValueAtTime(bassFreq, audioContext.currentTime);
-            bassGain.gain.setValueAtTime(0.05 * SETTINGS.volume, audioContext.currentTime);
-            bassGain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
-
-            bassOsc.start(audioContext.currentTime);
-            bassOsc.stop(audioContext.currentTime + 0.5);
-        }
+        osc.start(audioContext.currentTime);
+        osc.stop(audioContext.currentTime + melodyDurations[musicNoteIndex]);
 
         musicNoteIndex = (musicNoteIndex + 1) % melody.length;
         musicInterval = setTimeout(playNextNote, melodyDurations[musicNoteIndex] * 1000);
@@ -240,14 +168,7 @@ let player = {
     powerUp: null,
     powerUpTimer: 0,
     invincible: false,
-    invincibleTimer: 0,
-    // Animation states
-    jumpState: 'grounded', // 'grounded', 'jumping', 'doubleJump', 'falling'
-    jumpCount: 0,
-    legAnimation: 0,
-    armAnimation: 0,
-    bodyBounce: 0,
-    jumpAnimationFrame: 0
+    invincibleTimer: 0
 };
 
 // Combo and scoring system
@@ -267,77 +188,16 @@ const POWER_UPS = {
 // Particle system for effects
 let particles = [];
 
-function createParticles(x, y, color, count = 10, options = {}) {
-    const defaultOptions = {
-        spread: 8,
-        gravity: 0.1,
-        life: 1.0,
-        size: { min: 2, max: 8 },
-        fade: 0.02,
-        shape: 'circle' // 'circle', 'square', 'star'
-    };
-    
-    const config = { ...defaultOptions, ...options };
-    
+function createParticles(x, y, color, count = 10) {
     for (let i = 0; i < count; i++) {
-        const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.5;
-        const speed = Math.random() * config.spread + 2;
-        
         particles.push({
             x: x,
             y: y,
-            vx: Math.cos(angle) * speed,
-            vy: Math.sin(angle) * speed,
-            life: config.life,
-            maxLife: config.life,
-            color: color,
-            size: Math.random() * (config.size.max - config.size.min) + config.size.min,
-            gravity: config.gravity,
-            fade: config.fade,
-            shape: config.shape,
-            rotation: Math.random() * Math.PI * 2,
-            rotationSpeed: (Math.random() - 0.5) * 0.2
-        });
-    }
-}
-
-// Enhanced confetti particles for victory
-function createConfetti(x, y, count = 20) {
-    const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff', '#ff69b4', '#ffd700', '#ff4500', '#9370db'];
-    
-    for (let i = 0; i < count; i++) {
-        const color = colors[Math.floor(Math.random() * colors.length)];
-        createParticles(x, y, color, 1, {
-            spread: 15,
-            gravity: 0.05,
-            life: 3.0,
-            size: { min: 8, max: 12 },
-            fade: 0.005,
-            shape: 'square'
-        });
-    }
-}
-
-// Create explosion effect
-function createExplosion(x, y, color, count = 30) {
-    for (let i = 0; i < count; i++) {
-        const angle = (Math.PI * 2 * i) / count;
-        const speed = Math.random() * 10 + 5;
-        
-        particles.push({
-            x: x,
-            y: y,
-            vx: Math.cos(angle) * speed,
-            vy: Math.sin(angle) * speed,
+            vx: (Math.random() - 0.5) * 8,
+            vy: (Math.random() - 0.5) * 8,
             life: 1.0,
-            maxLife: 1.0,
             color: color,
-            size: Math.random() * 8 + 4,
-            gravity: 0.2,
-            fade: 0.025,
-            shape: 'circle',
-            rotation: 0,
-            rotationSpeed: 0
+            size: Math.random() * 6 + 2
         });
     }
 }
@@ -347,12 +207,8 @@ function updateParticles() {
         const p = particles[i];
         p.x += p.vx;
         p.y += p.vy;
-        p.vy += p.gravity || 0.1;
-        p.life -= p.fade || 0.02;
-        
-        if (p.rotation !== undefined) {
-            p.rotation += p.rotationSpeed || 0;
-        }
+        p.life -= 0.02;
+        p.vy += 0.1; // gravity
 
         if (p.life <= 0) {
             particles.splice(i, 1);
@@ -362,91 +218,20 @@ function updateParticles() {
 
 function drawParticles() {
     particles.forEach(p => {
-        ctx.globalAlpha = p.life / p.maxLife;
+        ctx.globalAlpha = p.life;
         ctx.fillStyle = p.color;
-        
-        ctx.save();
-        ctx.translate(p.x, p.y);
-        
-        if (p.rotation !== undefined) {
-            ctx.rotate(p.rotation);
-        }
-        
-        switch (p.shape) {
-            case 'circle':
-                ctx.beginPath();
-                ctx.arc(0, 0, p.size, 0, Math.PI * 2);
-                ctx.fill();
-                break;
-            case 'square':
-                ctx.fillRect(-p.size/2, -p.size/2, p.size, p.size);
-                break;
-            case 'star':
-                drawStar(0, 0, p.size, p.size/2, 5);
-                break;
-            default:
-                ctx.beginPath();
-                ctx.arc(0, 0, p.size, 0, Math.PI * 2);
-                ctx.fill();
-        }
-        
-        ctx.restore();
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
     });
     ctx.globalAlpha = 1.0;
-}
-
-// Helper function to draw star shapes
-function drawStar(cx, cy, outerRadius, innerRadius, points) {
-    ctx.beginPath();
-    for (let i = 0; i < points * 2; i++) {
-        const radius = i % 2 === 0 ? outerRadius : innerRadius;
-        const angle = (i * Math.PI) / points;
-        const x = cx + Math.cos(angle) * radius;
-        const y = cy + Math.sin(angle) * radius;
-        
-        if (i === 0) {
-            ctx.moveTo(x, y);
-        } else {
-            ctx.lineTo(x, y);
-        }
-    }
-    ctx.closePath();
-    ctx.fill();
 }
 
 // Game settings
 const SETTINGS = {
     volume: 0.5,
-    comboTimer: 60, // frames to maintain combo
-    screenShakeIntensity: 5,
-    particleIntensity: 1.0
+    comboTimer: 60 // frames to maintain combo
 };
-
-// Screen shake system
-let screenShake = {
-    x: 0,
-    y: 0,
-    intensity: 0,
-    decay: 0.9
-};
-
-function triggerScreenShake(intensity = SETTINGS.screenShakeIntensity) {
-    screenShake.intensity = Math.max(screenShake.intensity, intensity);
-    screenShake.x = (Math.random() - 0.5) * intensity;
-    screenShake.y = (Math.random() - 0.5) * intensity;
-}
-
-function updateScreenShake() {
-    if (screenShake.intensity > 0.1) {
-        screenShake.x *= screenShake.decay;
-        screenShake.y *= screenShake.decay;
-        screenShake.intensity *= screenShake.decay;
-    } else {
-        screenShake.x = 0;
-        screenShake.y = 0;
-        screenShake.intensity = 0;
-    }
-}
 
 // Level definitions with increasing difficulty
 const levels = [
@@ -594,8 +379,6 @@ function loadLevel(levelIndex) {
         gameState = 'victory';
         stopBackgroundMusic();
         playSound('levelComplete');
-        triggerScreenShake(10);
-        createConfetti(canvas.width / 2, canvas.height / 2, 50);
         return;
     }
 
@@ -679,68 +462,24 @@ function updatePlayer() {
         player.vx *= 0.8;
     }
 
-    // Jump and double jump with power-up
-    if ((keys[' '] || keys['Enter'] || keys['ArrowUp']) && player.jumpCount < 2) {
+    // Jump with power-up
+    if ((keys[' '] || keys['Enter'] || keys['ArrowUp']) && player.grounded) {
         let jumpPower = player.jumpPower;
         if (player.powerUp === POWER_UPS.JUMP) {
             jumpPower = -20;
         }
-        
-        // Set jump state
-        if (player.grounded) {
-            player.jumpState = 'jumping';
-            player.jumpCount = 1;
-        } else if (player.jumpCount === 1) {
-            player.jumpState = 'doubleJump';
-            player.jumpCount = 2;
-            jumpPower *= 0.8; // Slightly less power for double jump
-        }
-        
         player.vy = jumpPower;
         player.grounded = false;
-        player.jumpAnimationFrame = 0;
         playSound('jump');
-        triggerScreenShake(2);
 
         // Jump particles
-        createParticles(player.x + player.width / 2, player.y + player.height, '#ff69b4', 
-                        player.jumpCount === 2 ? 12 : 8);
+        createParticles(player.x + player.width / 2, player.y + player.height, '#ff69b4', 5);
     }
 
     // Physics
     player.vy += 0.8;
     player.x += player.vx;
     player.y += player.vy;
-
-    // Update jump state based on velocity and ground status
-    if (!player.grounded) {
-        if (player.vy < 0) {
-            if (player.jumpState === 'grounded') {
-                player.jumpState = 'jumping';
-            } else if (player.jumpState === 'jumping') {
-                player.jumpState = 'falling';
-            }
-        } else if (player.vy > 0 && player.jumpState === 'jumping') {
-            player.jumpState = 'falling';
-        }
-    }
-
-    // Update animation variables
-    if (Math.abs(player.vx) > 0.1) {
-        player.legAnimation += 0.3;
-        player.armAnimation += 0.3;
-    } else {
-        player.legAnimation *= 0.8;
-        player.armAnimation *= 0.8;
-    }
-
-    // Body bounce when moving
-    player.bodyBounce = Math.sin(player.legAnimation) * 2;
-
-    // Jump animation frame counter
-    if (player.jumpState !== 'grounded') {
-        player.jumpAnimationFrame++;
-    }
 
     // Screen boundaries
     if (player.x < 0) player.x = 0;
@@ -763,12 +502,6 @@ function updatePlayer() {
                 player.y = platform.y - player.height;
                 player.vy = 0;
                 player.grounded = true;
-                player.jumpState = 'grounded';
-                player.jumpCount = 0;
-                
-                // Landing particles with screen shake
-                createParticles(player.x + player.width / 2, player.y + player.height, '#87CEEB', 8);
-                triggerScreenShake(1);
             }
         }
     });
@@ -793,17 +526,33 @@ function updatePlayer() {
                 player.y = platform.y - player.height;
                 player.vy = 0;
                 player.grounded = true;
-                player.jumpState = 'grounded';
-                player.jumpCount = 0;
-                
-                // Landing particles with screen shake
-                createParticles(player.x + player.width / 2, player.y + player.height, '#87CEEB', 8);
-                triggerScreenShake(1);
             }
         }
     });
 
-    
+    // Disappearing platforms
+    if (currentLevelData.disappearingPlatforms) {
+        currentLevelData.disappearingPlatforms.forEach(platform => {
+            platform.timer++;
+            if (platform.timer >= platform.cycleTime) {
+                platform.visible = !platform.visible;
+                platform.timer = 0;
+            }
+
+            if (platform.visible &&
+                player.x < platform.x + platform.width &&
+                player.x + player.width > platform.x &&
+                player.y < platform.y + platform.height &&
+                player.y + player.height > platform.y) {
+
+                if (player.vy > 0 && player.y < platform.y) {
+                    player.y = platform.y - player.height;
+                    player.vy = 0;
+                    player.grounded = true;
+                }
+            }
+        });
+    }
 
     // Collect candies
     currentLevelData.candies.forEach(candy => {
@@ -819,12 +568,6 @@ function updatePlayer() {
             if (comboTimer > 0) {
                 combo++;
                 comboTimer = SETTINGS.comboTimer;
-                
-                // Play combo sound for every 5 combo increments
-                if (combo % 5 === 0) {
-                    playSound('combo');
-                    triggerScreenShake(2);
-                }
                 comboMultiplier = Math.min(combo, 5); // Max 5x multiplier
             } else {
                 combo = 1;
@@ -846,8 +589,7 @@ function updatePlayer() {
             }
 
             playSound('collect');
-            triggerScreenShake(1);
-            createParticles(candy.x + 10, candy.y + 10, '#ffd700', 12);
+            createParticles(candy.x + 10, candy.y + 10, '#ffd700', 8);
         }
     });
 
@@ -863,8 +605,7 @@ function updatePlayer() {
             player.powerUp = powerUp.type;
             player.powerUpTimer = 300; // 5 seconds at 60fps
             playSound('powerup');
-            triggerScreenShake(3);
-            createExplosion(powerUp.x + 10, powerUp.y + 10, '#00ff00', 15);
+            createParticles(powerUp.x + 10, powerUp.y + 10, '#00ff00', 12);
         }
     });
 
@@ -890,15 +631,12 @@ function updatePlayer() {
                 player.powerUp = null;
                 player.invincible = true;
                 player.invincibleTimer = 60; // 1 second
-                playSound('shield');
-                triggerScreenShake(5);
-                createParticles(player.x + player.width / 2, player.y + player.height / 2, '#00ff00', 25);
+                playSound('powerup');
             } else {
                 // Take damage
                 player.lives--;
                 playSound('hit');
-                triggerScreenShake(8);
-                createExplosion(player.x + player.width / 2, player.y + player.height / 2, '#ff0000', 20);
+                createParticles(player.x + player.width / 2, player.y + player.height / 2, '#ff0000', 15);
 
                 if (player.lives <= 0) {
                     gameState = 'gameover';
@@ -965,9 +703,6 @@ function updatePlayer() {
 
     // Update particles
     updateParticles();
-    
-    // Update screen shake
-    updateScreenShake();
 }
 
 function resetGame() {
@@ -1092,10 +827,6 @@ function drawCharacter(x, y) {
 }
 
 function drawGame() {
-    // Apply screen shake
-    ctx.save();
-    ctx.translate(screenShake.x, screenShake.y);
-    
     // Gradient sky background
     const skyGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
     skyGradient.addColorStop(0, '#87CEEB');
@@ -1294,8 +1025,6 @@ function drawGame() {
 
     // HUD
     drawHUD();
-    
-    ctx.restore();
 }
 
 function drawPlayer() {
@@ -1545,22 +1274,14 @@ function drawGameOverScreen() {
 
 function drawVictoryScreen() {
     // Enhanced confetti particles
-    if (animationFrame % 2 === 0) {
-        // Create confetti bursts from multiple positions
-        if (animationFrame % 30 === 0) {
-            createConfetti(Math.random() * canvas.width, -10, 15);
-            triggerScreenShake(2);
-        }
-        
-        // Regular confetti particles
+    if (animationFrame % 3 === 0) {
         const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff', '#ff69b4', '#ffd700'];
-        for (let i = 0; i < 3; i++) {
+        for (let i = 0; i < 5; i++) {
             createParticles(
                 Math.random() * canvas.width,
                 -10,
                 colors[Math.floor(Math.random() * colors.length)],
-                Math.floor(Math.random() * 2) + 1,
-                { spread: 12, gravity: 0.03, life: 2.0, shape: 'square' }
+                Math.floor(Math.random() * 3) + 2
             );
         }
     }
