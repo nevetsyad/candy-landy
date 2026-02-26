@@ -1106,6 +1106,14 @@ function drawStartScreen() {
     ctx.font = '24px Comic Sans MS';
     ctx.fillText('Enhanced Edition!', canvas.width / 2, 190);
 
+    // Princess name
+    ctx.fillStyle = '#ffd700';
+    ctx.font = 'bold 28px Comic Sans MS';
+    ctx.shadowColor = '#daa520';
+    ctx.shadowBlur = 8;
+    ctx.fillText('✨ Princess Emmaline ✨', canvas.width / 2, 230);
+    ctx.shadowBlur = 0;
+
     // Instructions
     ctx.fillStyle = '#333';
     ctx.font = '22px Comic Sans MS';
@@ -1582,10 +1590,10 @@ function drawPlayer() {
 function drawHUD() {
     // HUD background
     ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-    ctx.fillRect(10, 10, 280, 130);
+    ctx.fillRect(10, 10, 280, 190);
     ctx.strokeStyle = '#ff69b4';
     ctx.lineWidth = 2;
-    ctx.strokeRect(10, 10, 280, 130);
+    ctx.strokeRect(10, 10, 280, 190);
 
     // Score
     ctx.fillStyle = '#ff1493';
@@ -1596,33 +1604,38 @@ function drawHUD() {
     // Lives
     ctx.fillText('❤️ Lives: ' + '❤️'.repeat(player.lives), 20, 65);
 
+    // Princess name
+    ctx.fillStyle = '#ffd700';
+    ctx.font = 'bold 16px Comic Sans MS';
+    ctx.fillText('👑 Princess Emmaline', 20, 90);
+
     // Level
-    ctx.fillText('🎮 Level: ' + (currentLevel + 1) + '/' + levels.length, 20, 90);
+    ctx.fillText('🎮 Level: ' + (currentLevel + 1) + '/' + levels.length, 20, 110);
 
     // Candies remaining
     const collected = currentLevelData.candies.filter(c => c.collected).length;
     const total = currentLevelData.candies.length;
-    ctx.fillText('🍭 Candies: ' + collected + '/' + total, 20, 115);
+    ctx.fillText('🍭 Candies: ' + collected + '/' + total, 20, 130);
 
     // Combo display
     if (combo > 1) {
         ctx.fillStyle = '#ffd700';
         ctx.font = 'bold 18px Comic Sans MS';
-        ctx.fillText('🔥 ' + combo + 'x COMBO!', 20, 140);
+        ctx.fillText('🔥 ' + combo + 'x COMBO!', 20, 150);
     }
 
     // Time bonus
     if (timeBonus > 0) {
         ctx.fillStyle = '#00ff00';
         ctx.font = '16px Comic Sans MS';
-        ctx.fillText('⏱️ Bonus: +' + timeBonus, 20, 160);
+        ctx.fillText('⏱️ Bonus: +' + timeBonus, 20, 170);
     }
 
     // Jump indicator (double jump capability)
     const jumpsRemaining = 2 - player.jumpCount;
     ctx.fillStyle = jumpsRemaining > 0 ? '#00ffff' : '#888';
     ctx.font = '16px Comic Sans MS';
-    ctx.fillText('🦘 Jumps: ' + '⬆️'.repeat(jumpsRemaining), 20, 185);
+    ctx.fillText('🦘 Jumps: ' + '⬆️'.repeat(jumpsRemaining), 20, 190);
 
     // Power-up indicator
     if (player.powerUp) {
