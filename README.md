@@ -21,8 +21,10 @@ A polished candy-themed platformer game with advanced features including multipl
 
 ### Enemies
 - Red blob enemies that patrol platforms
-- Avoid them or use invincibility to defeat them!
-- Defeating enemies grants bonus points
+- **Jump on enemies from above** to stomp and defeat them! (Mario-style)
+- Avoid hitting enemies from the side or bottom, or use invincibility
+- Stomping enemies awards 50 points and triggers combo system
+- Defeating enemies creates explosion and star particle effects
 
 ### Visual Effects
 - **Particle Systems** for candy collection, jumps, and landings
@@ -68,7 +70,7 @@ A polished candy-themed platformer game with advanced features including multipl
 - **Candy Collection**: 10 points (base)
 - **Combo Multiplier**: Up to 5x for rapid collection
 - **Time Bonus**: Up to 300 points per level (based on completion time)
-- **Enemy Defeat**: 50 points each
+- **Enemy Stomp**: 50 points each (jump on enemies from above!)
 - **Power-Up Collection**: 25 points each
 
 ### High Scores
@@ -99,11 +101,12 @@ A polished candy-themed platformer game with advanced features including multipl
 ## 🏆 Tips for High Scores
 
 1. **Build Combos** - Collect candies quickly (within 1.5 seconds) for multipliers
-2. **Watch the Clock** - Complete levels under 60 seconds for maximum time bonus
-3. **Collect Everything** - Don't miss candies or power-ups
-4. **Defeat Enemies** - Use invincibility to defeat enemies for bonus points
-5. **Plan Your Route** - Memorize platform patterns and disappearing timings
-6. **Use Power-Ups Wisely** - Save invincibility for enemy-dense areas
+2. **Stomp Enemies** - Jump on enemies from above for 50 points each! Perfect for building combos
+3. **Watch the Clock** - Complete levels under 60 seconds for maximum time bonus
+4. **Collect Everything** - Don't miss candies or power-ups
+5. **Defeat Enemies** - Use stomp jumps or invincibility to defeat enemies for bonus points
+6. **Plan Your Route** - Memorize platform patterns and disappearing timings
+7. **Use Power-Ups Wisely** - Save invincibility for enemy-dense areas
 
 ## 🌟 Level Guide
 
@@ -152,8 +155,8 @@ A polished candy-themed platformer game with advanced features including multipl
 1. Open `index.html` in a modern web browser
 2. Click anywhere to initialize audio (required by browsers)
 3. Press SPACE or ENTER to start
-4. Use arrow keys to move, SPACE to jump
-5. Collect candies, avoid enemies, reach the flag!
+4. Use arrow keys to move, SPACE to jump (double tap for double jump!)
+5. Collect candies, stomp enemies by jumping on them from above, reach the flag!
 6. Complete all 3 levels for the ultimate victory!
 
 ## 📱 Browser Compatibility
