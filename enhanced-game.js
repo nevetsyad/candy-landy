@@ -239,7 +239,7 @@ let player = {
     vx: 0,
     vy: 0,
     speed: 5,
-    jumpPower: -16, // Increased from -15 for better jump feel
+    jumpPower: -15, // Reduced for better gameplay balance
     grounded: false,
     lives: 3,
     invincible: false,
@@ -553,7 +553,7 @@ const levels = [
         ],
         powerUps: [
             { x: 270, y: 320, type: 'extraLife', collected: false },
-            { x: 750, y: 120, type: 'extraLife', collected: false },
+            { x: 720, y: 120, type: 'extraLife', collected: false }, // Moved from 750 to 720 to be reachable
             { x: 350, y: 520, type: 'extraLife', collected: false }
         ],
         enemies: [
@@ -1851,27 +1851,27 @@ function drawGameOverScreen() {
     // High score message
     if (score >= highScore) {
         ctx.fillStyle = '#ffd700';
-        ctx.fillText('🎉 NEW HIGH SCORE! 🎉', canvas.width / 2, 400);
+        ctx.fillText('🎉 NEW HIGH SCORE! 🎉', canvas.width / 2, 380);
     }
 
     // Initials input for high score
     if (isEnteringInitials) {
         ctx.fillStyle = '#fff';
         ctx.font = 'bold 24px Comic Sans MS';
-        ctx.fillText('🏆 NEW HIGH SCORE! Enter 3 initials:', canvas.width / 2, 400);
+        ctx.fillText('🏆 NEW HIGH SCORE! Enter 3 initials:', canvas.width / 2, 420);
         
         ctx.fillStyle = '#ffd700';
         ctx.font = 'bold 32px Comic Sans MS';
-        ctx.fillText(initialsInput + '_'.repeat(3 - initialsInput.length), canvas.width / 2, 440);
+        ctx.fillText(initialsInput + '_'.repeat(3 - initialsInput.length), canvas.width / 2, 460);
         
         ctx.fillStyle = '#fff';
         ctx.font = '18px Comic Sans MS';
-        ctx.fillText('Press ENTER to save', canvas.width / 2, 480);
+        ctx.fillText('Press ENTER to save', canvas.width / 2, 500);
     } else {
         // Restart instruction
         ctx.fillStyle = '#fff';
         ctx.font = '24px Comic Sans MS';
-        ctx.fillText('Press R to Restart', canvas.width / 2, 460);
+        ctx.fillText('Press R to Restart', canvas.width / 2, 480);
     }
 
     // Volume indicator
