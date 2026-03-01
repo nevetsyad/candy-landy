@@ -8,6 +8,77 @@ const ctx = canvas.getContext('2d');
 canvas.width = 800;
 canvas.height = 600;
 
+// Focus handling - make canvas focusable
+canvas.setAttribute('tabindex', '0');
+canvas.setAttribute('autofocus', 'true');
+
+// Track focus state for visual feedback
+let canvasHasFocus = false;
+let showFocusMessage = false;
+
+// Update focus state
+function updateFocusState() {
+    canvasHasFocus = document.activeElement === canvas;
+    showFocusMessage = !canvasHasFocus && (gameState === 'playing' || gameState === 'paused');
+}
+
+// Focus canvas on page load
+window.addEventListener('load', () => {
+    setTimeout(() => {
+        canvas.focus();
+        updateFocusState();
+        console.log('Candy Landy canvas focused. Press SPACE, ENTER, or UP ARROW to start!');
+    }, 100);
+});
+
+// Click handler to ensure canvas gets focus
+canvas.addEventListener('click', (e) => {
+    if (!canvasHasFocus) {
+        canvas.focus();
+        updateFocusState();
+    }
+});
+
+// Track focus changes
+canvas.addEventListener('focus', () => {
+    canvasHasFocus = true;
+    showFocusMessage = false;
+});
+
+canvas.addEventListener('blur', () => {
+    updateFocusState();
+    // Auto-refocus during gameplay
+    if (gameState === 'playing' || gameState === 'paused') {
+        setTimeout(() => {
+            if (gameState === 'playing' || gameState === 'paused') {
+                canvas.focus();
+            }
+        }, 100);
+    }
+});
+
+// Handle keyboard events even if canvas isn't focused
+document.addEventListener('keydown', (e) => {
+    // Prevent default for game keys
+    if ([' ', 'Enter', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+        e.preventDefault();
+    }
+    
+    // Handle start/gameover/victory states
+    if (gameState === 'start' || gameState === 'gameover' || gameState === 'victory') {
+        if (e.key === ' ' || e.key === 'Enter' || e.key === 'ArrowUp') {
+            if (gameState === 'start') {
+                gameState = 'playing';
+                audioManager.startBackgroundMusic();
+                loadLevel(0);
+            } else if (gameState === 'gameover' || gameState === 'victory') {
+                gameState = 'start';
+                resetGame();
+            }
+        }
+    }
+});
+
 // ============================================================================
 // AUDIO MANAGER CLASS
 // ============================================================================
@@ -1233,6 +1304,13 @@ function drawStartScreen() {
     ctx.fillStyle = '#ff1493';
     ctx.font = '20px Comic Sans MS';
     ctx.fillText('🏆 High Score: ' + highScore, canvas.width / 2, 520);
+    
+    // Add focus hint
+    if (!canvasHasFocus) {
+        ctx.fillStyle = '#ff6600';
+        ctx.font = '16px Comic Sans MS';
+        ctx.fillText('💡 Click anywhere if keyboard doesn\'t work', canvas.width / 2, 560);
+    }
 
     const bounce = Math.sin(animationFrame * 0.1) * 10;
     drawCharacter(canvas.width / 2, 480 + bounce);
@@ -1496,6 +1574,22 @@ function drawGame() {
 
     // HUD
     drawHUD();
+    
+    // Show focus message if canvas lost focus during gameplay
+    if (showFocusMessage) {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        ctx.fillRect(canvas.width / 2 - 150, canvas.height / 2 - 40, 300, 80);
+        ctx.strokeStyle = '#ff69b4';
+        ctx.lineWidth = 3;
+        ctx.strokeRect(canvas.width / 2 - 150, canvas.height / 2 - 40, 300, 80);
+        
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 24px Comic Sans MS';
+        ctx.textAlign = 'center';
+        ctx.fillText('🎮 Click to Focus! 🎮', canvas.width / 2, canvas.height / 2);
+        ctx.font = '16px Comic Sans MS';
+        ctx.fillText('Then use keyboard to play', canvas.width / 2, canvas.height / 2 + 25);
+    }
     
     ctx.restore();
 }

@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Candy Landy - Keyboard Input Test</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fecfef 100%);
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+        }
+        
+        #testResults {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 0 20px rgba(255, 105, 180, 0.3);
+        }
+        
+        h1 {
+            color: #ff1493;
+            text-align: center;
+        }
+        
+        .test-item {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border: 2px solid #ddd;
+        }
+        
+        .test-item.pass {
+            background: #d4edda;
+            border-color: #c3e6cb;
+        }
+        
+        .test-item.fail {
+            background: #f8d7da;
+            border-color: #f5c6cb;
+        }
+        
+        .test-item.pending {
+            background: #fff3cd;
+            border-color: #ffeeba;
+        }
+        
+        #gameContainer {
+            text-align: center;
+            margin-top: 20px;
+        }
+        
+        #instructions {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div id="testResults">
+        <h1>🎮 Candy Landy Keyboard Input Test 🎮</h1>
+        <div id="results"></div>
+        <div id="gameContainer">
+            <canvas id="gameCanvas" width="800" height="600" style="border: 4px solid #ff69b4; border-radius: 10px;"></canvas>
+        </div>
+        <div id="instructions">
+            <h3>Test Instructions:</h3>
+            <p>1. The game should start automatically and you should see the start screen</p>
+            <p>2. Try pressing SPACE, ENTER, or UP ARROW - the game should start</p>
+            <p>3. Use ARROW KEYS to move the character</p>
+            <p>4. Press SPACE to jump</p>
+            <p>5. All keyboard inputs should work without clicking the canvas first</p>
+        </div>
+    </div>
+    
+    <script>
+        const testResults = {
+            canvasFocusOnLoad: false,
+            spaceKeyStartsGame: false,
+            enterKeyStartsGame: false,
+            arrowUpStartsGame: false,
+            arrowKeysMovePlayer: false,
+            spaceKeyJumps: false,
+            focusMessageShows: false
+        };
+        
+        function displayResults() {
+            const resultsDiv = document.getElementById('results');
+            let html = '';
+            
+            for (const [test, passed] of Object.entries(testResults)) {
+                const status = passed === null ? 'pending' : (passed ? 'pass' : 'fail');
+                const statusText = passed === null ? '⏳ Pending' : (passed ? '✅ Pass' : '❌ Fail');
+                const testName = test.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+                
+                html += `<div class="test-item ${status}">
+                    <strong>${testName}:</strong> ${statusText}
+                </div>`;
+            }
+            
+            resultsDiv.innerHTML = html;
+        }
+        
+        // Override console.log to capture focus message
+        const originalLog = console.log;
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            if (args[0] && args[0].includes('canvas focused')) {
+                testResults.canvasFocusOnLoad = true;
+                displayResults();
+            }
+        };
+        
+        // Initial display
+        displayResults();
+        
+        // Update results periodically
+        setInterval(displayResults, 500);
+    </script>
+    
+    <script src="enhanced-game-v2.js"></script>
+    <script>
+        // Test keyboard input after game loads
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                // Test 1: Check if canvas has focus
+                testResults.canvasFocusOnLoad = document.activeElement === canvas;
+                displayResults();
+                
+                // Test 2: Simulate SPACE key to start game
+                setTimeout(() => {
+                    if (gameState === 'start') {
+                        const event = new KeyboardEvent('keydown', { key: ' ', bubbles: true });
+                        document.dispatchEvent(event);
+                        
+                        setTimeout(() => {
+                            testResults.spaceKeyStartsGame = gameState === 'playing';
+                            displayResults();
+                            
+                            // Reset for next test
+                            if (gameState === 'playing') {
+                                gameState = 'start';
+                                resetGame();
+                            }
+                        }, 100);
+                    }
+                }, 500);
+                
+                // Test 3: Simulate ENTER key to start game
+                setTimeout(() => {
+                    if (gameState === 'start') {
+                        const event = new KeyboardEvent('keydown', { key: 'Enter', bubbles: true });
+                        document.dispatchEvent(event);
+                        
+                        setTimeout(() => {
+                            testResults.enterKeyStartsGame = gameState === 'playing';
+                            displayResults();
+                            
+                            // Reset for next test
+                            if (gameState === 'playing') {
+                                gameState = 'start';
+                                resetGame();
+                            }
+                        }, 100);
+                    }
+                }, 1500);
+                
+                // Test 4: Simulate ArrowUp key to start game
+                setTimeout(() => {
+                    if (gameState === 'start') {
+                        const event = new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true });
+                        document.dispatchEvent(event);
+                        
+                        setTimeout(() => {
+                            testResults.arrowUpStartsGame = gameState === 'playing';
+                            displayResults();
+                        }, 100);
+                    }
+                }, 2500);
+                
+                // Test 5: Test arrow key movement
+                setTimeout(() => {
+                    if (gameState === 'playing') {
+                        const initialX = player.x;
+                        keys['ArrowRight'] = true;
+                        
+                        setTimeout(() => {
+                            testResults.arrowKeysMovePlayer = player.x > initialX;
+                            displayResults();
+                            keys['ArrowRight'] = false;
+                        }, 200);
+                    }
+                }, 3500);
+                
+                // Test 6: Test jump
+                setTimeout(() => {
+                    if (gameState === 'playing') {
+                        // Reset player to ground
+                        player.y = 490;
+                        player.grounded = true;
+                        player.jumpCount = 0;
+                        player.coyoteTime = 6;
+                        
+                        const initialY = player.y;
+                        keys[' '] = true;
+                        
+                        setTimeout(() => {
+                            testResults.spaceKeyJumps = player.y < initialY || player.vy < 0;
+                            displayResults();
+                            keys[' '] = false;
+                        }, 200);
+                    }
+                }, 4500);
+                
+                // Test 7: Test focus message (check immediately before auto-refocus)
+                setTimeout(() => {
+                    canvas.blur();
+                    // Check immediately after blur, before auto-refocus
+                    setTimeout(() => {
+                        testResults.focusMessageShows = showFocusMessage;
+                        displayResults();
+                        // Canvas will auto-refocus via the blur handler
+                    }, 50);
+                }, 5500);
+                
+            }, 1000);
+        });
+    </script>
+</body>
+</html>
