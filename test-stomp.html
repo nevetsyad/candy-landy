@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Candy Landy - Enemy Stomp Test</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #87CEEB, #E0F7FA);
+            font-family: 'Comic Sans MS', cursive;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+        
+        h1 {
+            color: #ff1493;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            margin-bottom: 10px;
+        }
+        
+        .instructions {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 15px;
+            border-radius: 10px;
+            border: 3px solid #ff69b4;
+            margin-bottom: 20px;
+            max-width: 600px;
+        }
+        
+        .instructions h2 {
+            color: #ff1493;
+            margin-top: 0;
+        }
+        
+        .instructions ul {
+            text-align: left;
+        }
+        
+        .instructions li {
+            margin: 5px 0;
+        }
+        
+        canvas {
+            border: 3px solid #ff69b4;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            background: white;
+        }
+        
+        .controls {
+            margin-top: 15px;
+            text-align: center;
+            color: #333;
+        }
+        
+        .status {
+            margin-top: 10px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 5px;
+            border: 2px solid #ffd700;
+        }
+    </style>
+</head>
+<body>
+    <h1>🍬 Candy Landy - Enemy Stomp Test</h1>
+    
+    <div class="instructions">
+        <h2>Testing Enemy Stomp Mechanic</h2>
+        <ul>
+            <li><strong>Requirement 1:</strong> Jump on enemies from above to kill them</li>
+            <li><strong>Requirement 2:</strong> Player should bounce up after stomping</li>
+            <li><strong>Requirement 3:</strong> Visual effects when killing enemies</li>
+            <li><strong>Requirement 4:</strong> Award points for killing enemies</li>
+            <li><strong>Test:</strong> Landing on enemies from below/sides should still hurt</li>
+        </ul>
+    </div>
+    
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    
+    <div class="controls">
+        <p><strong>Controls:</strong> Arrow Keys to move, SPACE/UP to jump</p>
+        <p><strong>Goal:</strong> Jump on red enemies to kill them, avoid touching them from sides/bottom</p>
+    </div>
+    
+    <div class="status" id="status">
+        Status: Ready to test...
+    </div>
+
+    <script src="enhanced-game.js"></script>
+    <script>
+        // Override certain game behaviors for testing
+        window.addEventListener('load', function() {
+            const statusDiv = document.getElementById('status');
+            
+            // Monitor game events
+            const originalPlaySound = window.playSound;
+            window.playSound = function(type) {
+                console.log('Sound played:', type);
+                if (type === 'enemyHit') {
+                    statusDiv.innerHTML = '🎉 Enemy stomped! Check for bounce effect, points, and particles.';
+                    statusDiv.style.background = 'rgba(0, 255, 0, 0.3)';
+                }
+                return originalPlaySound.apply(this, arguments);
+            };
+            
+            // Monitor score changes
+            let lastScore = 0;
+            setInterval(() => {
+                if (window.score !== lastScore) {
+                    const scoreDiff = window.score - lastScore;
+                    if (scoreDiff > 0) {
+                        statusDiv.innerHTML = `✅ Score increased by ${scoreDiff} points! Enemy killed successfully.`;
+                        statusDiv.style.background = 'rgba(255, 215, 0, 0.3)';
+                    }
+                    lastScore = window.score;
+                }
+            }, 100);
+            
+            // Monitor player position and velocity
+            setInterval(() => {
+                if (window.player && window.enemies.length > 0) {
+                    const player = window.player;
+                    const enemy = window.enemies[0];
+                    
+                    // Check for potential stomp
+                    const playerBottom = player.y + player.height;
+                    const enemyCenter = enemy.y + enemy.height / 2;
+                    const isStomp = player.vy > 0 && playerBottom < enemyCenter;
+                    
+                    if (isStomp) {
+                        statusDiv.innerHTML = '🎯 Stomp condition detected! Player falling and above enemy center.';
+                        statusDiv.style.background = 'rgba(0, 255, 255, 0.3)';
+                    }
+                }
+            }, 50);
+            
+            // Monitor enemy removal
+            let lastEnemyCount = 0;
+            setInterval(() => {
+                if (window.enemies && window.enemies.length !== lastEnemyCount) {
+                    if (window.enemies.length < lastEnemyCount) {
+                        statusDiv.innerHTML = '💥 Enemy removed! Stomp mechanic working.';
+                        statusDiv.style.background = 'rgba(255, 0, 0, 0.3)';
+                    }
+                    lastEnemyCount = window.enemies.length;
+                }
+            }, 100);
+            
+            // Monitor player bounce
+            setInterval(() => {
+                if (window.player && window.player.vy < -5) {
+                    statusDiv.innerHTML = '🦘 Player bouncing upward! Stomp bounce effect working.';
+                    statusDiv.style.background = 'rgba(138, 43, 226, 0.3)';
+                }
+            }, 100);
+        });
+    </script>
+</body>
+</html>

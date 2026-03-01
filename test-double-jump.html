@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Double Jump Test</title>
+    <style>
+        body { margin: 0; padding: 20px; background: #f0f0f0; font-family: Arial, sans-serif; }
+        canvas { border: 2px solid #333; background: white; }
+        .test-info { margin: 10px 0; padding: 10px; background: white; border-radius: 5px; }
+        .test-step { margin: 5px 0; padding: 5px; }
+        .pass { color: green; font-weight: bold; }
+        .fail { color: red; font-weight: bold; }
+        .instructions { background: #e3f2fd; padding: 15px; margin: 10px 0; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <h1>🦘 Double Jump Mechanic Test</h1>
+    
+    <div class="instructions">
+        <h3>Instructions:</h3>
+        <ol>
+            <li>Press SPACE/Enter/Up Arrow to start the game</li>
+            <li>Press jump button ONCE while on ground - should jump normally</li>
+            <li>While in air, press jump button AGAIN - should perform double jump</li>
+            <li>Try to jump a third time - should NOT be able to jump</li>
+            <li>Land on platform - jump count should reset to 2</li>
+            <li>Check the HUD shows correct jump count (🦘 Jumps)</li>
+        </ol>
+    </div>
+
+    <div class="test-info">
+        <div class="test-step">✅ Expected: Player starts with 2 jumps available</div>
+        <div class="test-step">✅ Expected: First jump uses 1 jump, now has 1 remaining</div>
+        <div class="test-step">✅ Expected: Second jump (double jump) uses last jump, now has 0</div>
+        <div class="test-step">✅ Expected: Cannot jump a third time until landing</div>
+        <div class="test-step">✅ Expected: Landing resets to 2 jumps available</div>
+    </div>
+
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+
+    <script src="enhanced-game.js"></script>
+</body>
+</html>
