@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Candy Landy - Working Edition</title>
+    <title>Candy Landy v2.0 - Performance Optimized</title>
     <style>
         body {
             margin: 0;
@@ -41,6 +41,12 @@
             text-align: center;
         }
         
+        #version {
+            color: #00aa00;
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+        
         #instructions {
             color: #8b4513;
             font-size: 1.2em;
@@ -51,16 +57,47 @@
             border-radius: 10px;
             border: 2px solid #ff69b4;
         }
+        
+        #perfStats {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            color: #00ff00;
+            font-family: monospace;
+            font-size: 12px;
+            padding: 10px;
+            border-radius: 5px;
+            z-index: 1000;
+        }
     </style>
 </head>
 <body>
+    <div id="perfStats">
+        <div>FPS: <span id="fps">60</span></div>
+        <div>Particles: <span id="particleCount">0</span></div>
+        <div>Pool Size: <span id="poolSize">0</span></div>
+    </div>
+    
     <div id="gameContainer">
-        <div id="gameTitle">🍬 Candy Landy 🍬</div>
+        <div id="gameTitle">🍬 Candy Landy 🍬 <span id="version">v2.0</span></div>
         <canvas id="gameCanvas" width="800" height="600"></canvas>
         <div id="instructions">
-            Use ARROW KEYS to move • SPACE/ENTER/UP to jump • Double tap for DOUBLE JUMP! • ESC to pause
+            Use ARROW KEYS to move • SPACE/ENTER/UP to jump • Double tap for DOUBLE JUMP! • ESC to pause • Keys 0-5 for volume
         </div>
     </div>
+    
     <script src="enhanced-game-v2.js"></script>
+    <script>
+        // Update stats display
+        setInterval(() => {
+            const stats = window.getGameStats();
+            if (stats) {
+                document.getElementById('fps').textContent = stats.fps;
+                document.getElementById('particleCount').textContent = stats.activeParticles;
+                document.getElementById('poolSize').textContent = stats.poolSize;
+            }
+        }, 500);
+    </script>
 </body>
 </html>
