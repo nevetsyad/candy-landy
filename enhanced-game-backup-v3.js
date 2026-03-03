@@ -1,5 +1,4 @@
 // Enhanced Candy Landy Game - Multiple Levels, Sound Effects, Power-ups, Enemies
-// Version 5 - Critical Fixes + Checkpoints + Timer + Dash + Wall Jump + Mini-map
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
@@ -49,10 +48,7 @@ const sounds = {
     gameOver: null,
     combo: null,
     shield: null,
-    enemyHit: null,
-    dash: null,
-    wallJump: null,
-    checkpoint: null
+    enemyHit: null
 };
 
 // Initialize audio with graceful degradation
@@ -233,34 +229,6 @@ function playSound(type) {
             oscillator.start(audioContext.currentTime);
             oscillator.stop(audioContext.currentTime + 0.2);
             break;
-        case 'dash':
-            oscillator.type = 'triangle';
-            oscillator.frequency.setValueAtTime(400, audioContext.currentTime);
-            oscillator.frequency.exponentialRampToValueAtTime(600, audioContext.currentTime + 0.1);
-            gainNode.gain.setValueAtTime(0.25 * volumeGain, audioContext.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
-            oscillator.start(audioContext.currentTime);
-            oscillator.stop(audioContext.currentTime + 0.1);
-            break;
-        case 'wallJump':
-            oscillator.type = 'triangle';
-            oscillator.frequency.setValueAtTime(300, audioContext.currentTime);
-            oscillator.frequency.exponentialRampToValueAtTime(450, audioContext.currentTime + 0.15);
-            gainNode.gain.setValueAtTime(0.3 * volumeGain, audioContext.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15);
-            oscillator.start(audioContext.currentTime);
-            oscillator.stop(audioContext.currentTime + 0.15);
-            break;
-        case 'checkpoint':
-            oscillator.type = 'sine';
-            oscillator.frequency.setValueAtTime(660, audioContext.currentTime);
-            oscillator.frequency.setValueAtTime(880, audioContext.currentTime + 0.1);
-            oscillator.frequency.setValueAtTime(1100, audioContext.currentTime + 0.2);
-            gainNode.gain.setValueAtTime(0.25 * volumeGain, audioContext.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
-            oscillator.start(audioContext.currentTime);
-            oscillator.stop(audioContext.currentTime + 0.3);
-            break;
     }
 }
 
@@ -382,20 +350,8 @@ let player = {
     // Enhanced jump mechanics
     coyoteTime: 0, // Frames to jump after leaving platform
     jumpBuffer: 0, // Remember jump input before landing
-    canDoubleJump: true,
-    // PHASE 2: Dash properties
-    dashCooldown: 0,
-    dashTimer: 0,
-    isDashing: false,
-    // PHASE 2: Wall jump properties
-    wallSliding: false,
-    wallDir: 0,
-    canWallSlide: true,
-    canWallJump: true
+    canDoubleJump: true
 };
-
-// PHASE 1: Explicit jump state tracking
-let jumpState = 'grounded'; // 'grounded', 'jumping', 'doubleJump', 'falling', 'wallSliding'
 
 // Combo and scoring system
 let combo = 0;
@@ -403,16 +359,12 @@ let comboTimer = 0;
 let comboMultiplier = 1;
 let timeBonus = 0;
 
-// PHASE 2: Level timer
-let levelStartTime = 0;
-
-// Power-up types (PHASE 2: Added DASH)
+// Power-up types
 const POWER_UPS = {
     SPEED: 'speed',
     JUMP: 'jump',
     SHIELD: 'shield',
-    DOUBLE_POINTS: 'double',
-    DASH: 'dash'
+    DOUBLE_POINTS: 'double'
 };
 
 // Particle system for effects
@@ -430,13 +382,8 @@ function createParticles(x, y, color, count = 10, options = {}) {
     if (typeof count !== 'number' || count <= 0) {
         count = 10;
     }
-    // PHASE 1: Limit particle count for performance
-    count = Math.max(0, Math.min(count, 100));
-    
-    // PHASE 1: Limit total particles to prevent performance issues
-    if (particles.length > 300) {
-        particles.splice(0, Math.min(count, particles.length - 300));
-    }
+    // Limit particle count for performance
+    count = Math.min(count, 100);
     
     const defaultOptions = {
         spread: 8,
@@ -490,7 +437,7 @@ function createConfetti(x, y, count = 20) {
 
 // Create explosion effect
 function createExplosion(x, y, color, count = 30) {
-    // PHASE 1: Validate inputs
+    // Validate inputs
     if (typeof x !== 'number' || typeof y !== 'number') {
         console.warn('Invalid explosion position');
         return;
@@ -498,13 +445,8 @@ function createExplosion(x, y, color, count = 30) {
     if (typeof count !== 'number' || count <= 0) {
         count = 30;
     }
-    // PHASE 1: Limit particle count for performance (cap at 100)
-    count = Math.max(0, Math.min(count, 100));
-    
-    // PHASE 1: Limit total particles to prevent performance issues
-    if (particles.length > 300) {
-        particles.splice(0, Math.min(count, particles.length - 300));
-    }
+    // Limit particle count for performance
+    count = Math.min(count, 150);
     
     for (let i = 0; i < count; i++) {
         const angle = (Math.PI * 2 * i) / count;
@@ -600,12 +542,6 @@ function drawPlayerTrail() {
             ctx.arc(trail.x, trail.y, 3, 0, Math.PI * 2);
             ctx.fill();
         }
-        // PHASE 2: Dash trail effect
-        if (trail.isDash) {
-            ctx.globalAlpha = trail.alpha * 0.5;
-            ctx.fillStyle = '#ffff00';
-            ctx.fillRect(trail.x - 20, trail.y, 40, player.height);
-        }
     });
     ctx.globalAlpha = 1.0;
 }
@@ -637,37 +573,33 @@ const SETTINGS = {
     particleIntensity: 1.0
 };
 
-// PHASE 3: Improved screen shake system with duration
+// Screen shake system
 let screenShake = {
     x: 0,
     y: 0,
     intensity: 0,
-    duration: 0
+    decay: 0.9
 };
 
-function triggerScreenShake(intensity = SETTINGS.screenShakeIntensity, duration = 10) {
+function triggerScreenShake(intensity = SETTINGS.screenShakeIntensity) {
     screenShake.intensity = Math.max(screenShake.intensity, intensity);
-    screenShake.duration = Math.max(screenShake.duration, duration);
     screenShake.x = (Math.random() - 0.5) * intensity;
     screenShake.y = (Math.random() - 0.5) * intensity;
 }
 
 function updateScreenShake() {
-    // PHASE 3: Improved screen shake with duration
-    if (screenShake.duration > 0) {
-        screenShake.x = (Math.random() - 0.5) * screenShake.intensity;
-        screenShake.y = (Math.random() - 0.5) * screenShake.intensity;
-        screenShake.duration--;
+    if (screenShake.intensity > 0.1) {
+        screenShake.x *= screenShake.decay;
+        screenShake.y *= screenShake.decay;
+        screenShake.intensity *= screenShake.decay;
     } else {
         screenShake.x = 0;
         screenShake.y = 0;
         screenShake.intensity = 0;
-        screenShake.duration = 0;
     }
 }
 
 // Level definitions with increasing difficulty
-// PHASE 2: Added checkpoints, time limits, and dash power-ups
 const levels = [
     // Level 1: Test Level - Enemy Stomp Testing
     {
@@ -689,15 +621,7 @@ const levels = [
             { x: 640, y: 220, width: 30, height: 30, vx: 3, range: 100, startX: 640 }  // Stomp target
         ],
         disappearingPlatforms: [],
-        goal: { x: 750, y: 200, width: 50, height: 50 },
-        // PHASE 2: Checkpoints
-        checkpoints: [
-            { x: 400, y: 500, collected: false },
-            { x: 650, y: 400, collected: false }
-        ],
-        // PHASE 2: Timer
-        timeLimit: 120, // 2 minutes
-        timeBonusMultiplier: 2
+        goal: { x: 750, y: 200, width: 50, height: 50 }
     },
     // Level 2: Moving elements and more candy
     {
@@ -716,8 +640,7 @@ const levels = [
             { x: 350, y: 520, collected: false }
         ],
         powerUps: [
-            { x: 280, y: 420, type: POWER_UPS.JUMP, collected: false },
-            { x: 500, y: 350, type: POWER_UPS.DASH, collected: false }
+            { x: 280, y: 420, type: POWER_UPS.JUMP, collected: false }
         ],
         enemies: [
             { x: 450, y: 310, width: 30, height: 30, vx: 2, range: 100, startX: 450 }
@@ -725,15 +648,7 @@ const levels = [
         disappearingPlatforms: [
             { x: 300, y: 150, width: 100, height: 20, visible: true, timer: 0, cycleTime: 180 }
         ],
-        goal: { x: 730, y: 200, width: 50, height: 50 },
-        // PHASE 2: Checkpoints
-        checkpoints: [
-            { x: 300, y: 450, collected: false },
-            { x: 600, y: 350, collected: false }
-        ],
-        // PHASE 2: Timer
-        timeLimit: 180, // 3 minutes
-        timeBonusMultiplier: 3
+        goal: { x: 730, y: 200, width: 50, height: 50 }
     },
     // Level 3: Challenging with enemies and obstacles
     {
@@ -760,8 +675,7 @@ const levels = [
         powerUps: [
             { x: 270, y: 320, type: POWER_UPS.SPEED, collected: false },
             { x: 750, y: 120, type: POWER_UPS.SHIELD, collected: false },
-            { x: 350, y: 520, type: POWER_UPS.DOUBLE_POINTS, collected: false },
-            { x: 500, y: 220, type: POWER_UPS.DASH, collected: false }
+            { x: 350, y: 520, type: POWER_UPS.DOUBLE_POINTS, collected: false }
         ],
         enemies: [
             { x: 200, y: 320, width: 30, height: 30, vx: 3, range: 120, startX: 200 },
@@ -773,16 +687,7 @@ const levels = [
             { x: 250, y: 420, width: 80, height: 20, visible: true, timer: 0, cycleTime: 150 },
             { x: 550, y: 350, width: 80, height: 20, visible: true, timer: 0, cycleTime: 90 }
         ],
-        goal: { x: 730, y: 100, width: 50, height: 50 },
-        // PHASE 2: Checkpoints
-        checkpoints: [
-            { x: 200, y: 500, collected: false },
-            { x: 400, y: 450, collected: false },
-            { x: 600, y: 400, collected: false }
-        ],
-        // PHASE 2: Timer
-        timeLimit: 240, // 4 minutes
-        timeBonusMultiplier: 3
+        goal: { x: 730, y: 100, width: 50, height: 50 }
     }
 ];
 
@@ -803,20 +708,6 @@ document.addEventListener('keydown', (e) => {
             startBackgroundMusic();
             loadLevel(0);
         }
-    }
-
-    // PHASE 2: Dash mechanic
-    if (e.key === 'Shift' && player.dashCooldown <= 0 && player.grounded && gameState === 'playing') {
-        player.isDashing = true;
-        player.dashTimer = 10; // 10 frames dash
-        player.dashCooldown = 60; // 1 second cooldown
-        player.vx = player.speed * 2; // Double speed
-        player.vy = 0; // No vertical movement
-        player.invincible = true; // Invincible during dash
-        playSound('dash');
-        createParticles(player.x, player.y + 30, '#ffff00', 5, {
-            spread: 8, gravity: 0.1, life: 1.0, size: { min: 3, max: 6 }, fade: 0.1, shape: 'square'
-        });
     }
 
     // Pause
@@ -858,7 +749,7 @@ function loadLevel(levelIndex) {
         gameState = 'victory';
         stopBackgroundMusic();
         playSound('levelComplete');
-        triggerScreenShake(10, 15);
+        triggerScreenShake(10);
         createConfetti(canvas.width / 2, canvas.height / 2, 50);
         return;
     }
@@ -875,13 +766,6 @@ function loadLevel(levelIndex) {
     player.powerUpTimer = 0;
     player.invincible = false;
     player.invincibleTimer = 0;
-    // PHASE 2: Reset dash state
-    player.dashCooldown = 0;
-    player.dashTimer = 0;
-    player.isDashing = false;
-    // PHASE 2: Reset wall slide state
-    player.wallSliding = false;
-    player.wallDir = 0;
 
     // Clear particles
     particles = [];
@@ -894,14 +778,6 @@ function loadLevel(levelIndex) {
     comboTimer = 0;
     comboMultiplier = 1;
     timeBonus = 0;
-
-    // PHASE 2: Reset level timer
-    levelStartTime = animationFrame;
-
-    // PHASE 2: Initialize checkpoints
-    if (!currentLevelData.checkpoints) {
-        currentLevelData.checkpoints = [];
-    }
 
     // Initialize enemies
     enemies = currentLevelData.enemies.map(e => ({
@@ -916,62 +792,11 @@ function loadLevel(levelIndex) {
     if (!currentLevelData.disappearingPlatforms) {
         currentLevelData.disappearingPlatforms = [];
     }
-
-    // PHASE 1: Validate enemy spawn positions
-    currentLevelData.enemies.forEach(e => {
-        const onPlatform = currentLevelData.platforms.some(p =>
-            e.x >= p.x && e.x <= p.x + p.width &&
-            e.y >= p.y && e.y <= p.y + p.height
-        );
-        if (!onPlatform) {
-            console.warn(`Warning: Enemy spawned off-platform at (${e.x}, ${e.y})`);
-            // Optional: Move enemy to nearest platform
-            const nearestPlatform = currentLevelData.platforms.reduce((nearest, p) => {
-                return p.y > nearest.y ? p : nearest;
-            });
-            e.x = nearestPlatform.x;
-            e.y = nearestPlatform.y - e.height;
-        }
-    });
-
-    // PHASE 1: Validate disappearing platforms have floor underneath
-    currentLevelData.disappearingPlatforms.forEach(dp => {
-        const hasFloor = currentLevelData.platforms.some(p =>
-            p.y >= dp.y - 5 && p.y <= dp.y + 5 &&
-            dp.x >= p.x && dp.x <= p.x + p.width
-        );
-        if (!hasFloor) {
-            console.warn(`Warning: Disappearing platform has no floor at (${dp.x}, ${dp.y})`);
-        }
-    });
 }
 
 // Update functions
 function updatePlayer() {
     if (gameState !== 'playing') return;
-
-    // PHASE 2: Handle dash
-    if (player.isDashing) {
-        player.dashTimer--;
-        // Create dash trail
-        if (player.dashTimer % 2 === 0) {
-            playerTrail.push({
-                x: player.x,
-                y: player.y,
-                alpha: 0.5,
-                isDash: true
-            });
-        }
-        if (player.dashTimer <= 0) {
-            player.isDashing = false;
-            player.invincible = false;
-        }
-    }
-
-    // PHASE 2: Handle dash cooldown
-    if (player.dashCooldown > 0) {
-        player.dashCooldown--;
-    }
 
     // Power-up timer
     if (player.powerUp) {
@@ -1026,80 +851,22 @@ function updatePlayer() {
         player.vx *= 0.8;
     }
 
-    // PHASE 2: Detect wall sliding
-    player.wallSliding = false;
-    player.wallDir = 0;
-
-    if (player.canWallSlide && player.vy > 0 && !player.grounded) {
-        // Check left wall
-        if (player.x > 0) {
-            for (let i = 0; i < player.height; i += 10) {
-                const checkY = player.y + i;
-                if (currentLevelData.platforms.some(p =>
-                    p.x + p.width > player.x &&
-                    p.x <= player.x &&
-                    checkY >= p.y &&
-                    checkY <= p.y + 10)) {
-                    player.wallSliding = true;
-                    player.wallDir = -1;
-                    player.vy = Math.min(player.vy, 2); // Slide slowly
-                    break;
-                }
-            }
-        }
-
-        // Check right wall
-        if (player.wallSliding === false && player.x < canvas.width) {
-            for (let i = 0; i < player.height; i += 10) {
-                const checkY = player.y + i;
-                if (currentLevelData.platforms.some(p =>
-                    p.x < player.x + player.width &&
-                    p.x + p.width >= player.x &&
-                    checkY >= p.y &&
-                    checkY <= p.y + 10)) {
-                    player.wallSliding = true;
-                    player.wallDir = 1;
-                    player.vy = Math.min(player.vy, 2);
-                    break;
-                }
-            }
-        }
-    }
-
-    // PHASE 2: Wall jump
-    const canWallJump = (keys['ArrowUp'] || keys[' '] || keys['Enter']) &&
-                        player.wallSliding &&
-                        player.jumpCount === 0;
-
-    if (canWallJump) {
-        player.vy = -14;
-        player.vx = player.wallDir * 10;
-        player.jumpCount = 1;
-        player.wallSliding = false;
-        player.grounded = false;
-        playSound('wallJump');
-        createParticles(player.x + (player.wallDir > 0 ? player.width : 0), player.y + player.height/2, '#00ffff', 8);
-        triggerScreenShake(3, 5);
-    }
-
     // Jump and double jump with power-up (enhanced with coyote time and jump buffer)
     // First jump requires being grounded (or coyote time), second jump can be done anywhere
     const canJump = (player.jumpBuffer > 0 || (keys[' '] || keys['Enter'] || keys['ArrowUp'])) &&
                      ((player.grounded || player.coyoteTime > 0 || player.jumpCount === 1) && player.jumpCount < 2);
 
-    if (canJump && !canWallJump) {
+    if (canJump) {
         let jumpPower = player.jumpPower;
         if (player.powerUp === POWER_UPS.JUMP) {
             jumpPower = -20;
         }
 
-        // PHASE 1: Set jump state properly
+        // Set jump state
         if (player.grounded || player.coyoteTime > 0) {
-            jumpState = 'jumping';
             player.jumpState = 'jumping';
             player.jumpCount = 1;
         } else if (player.jumpCount === 1) {
-            jumpState = 'doubleJump';
             player.jumpState = 'doubleJump';
             player.jumpCount = 2;
             jumpPower *= 1.0; // Full power for double jump (enhanced for better gameplay)
@@ -1111,7 +878,7 @@ function updatePlayer() {
         player.jumpBuffer = 0;
         player.jumpAnimationFrame = 0;
         playSound('jump');
-        triggerScreenShake(2, 5);
+        triggerScreenShake(2);
     }
 
     // Physics with terminal velocity
@@ -1126,24 +893,17 @@ function updatePlayer() {
     player.x += player.vx;
     player.y += player.vy;
 
-    // PHASE 1: Update jump state based on velocity and ground status
-    if (player.grounded) {
-        jumpState = 'grounded';
-        player.jumpState = 'grounded';
-        player.jumpCount = 0;
-    } else if (player.vy < 0) {
-        // Jumping up
-        if (player.jumpCount === 0) {
-            jumpState = 'jumping';
-            player.jumpState = 'jumping';
-        } else {
-            jumpState = 'doubleJump';
-            player.jumpState = 'doubleJump';
+    // Update jump state based on velocity and ground status
+    if (!player.grounded) {
+        if (player.vy < 0) {
+            if (player.jumpState === 'grounded') {
+                player.jumpState = 'jumping';
+            } else if (player.jumpState === 'jumping') {
+                player.jumpState = 'falling';
+            }
+        } else if (player.vy > 0 && player.jumpState === 'jumping') {
+            player.jumpState = 'falling';
         }
-    } else if (player.vy > 0) {
-        // Falling
-        jumpState = 'falling';
-        player.jumpState = 'falling';
     }
 
     // Update animation variables
@@ -1159,7 +919,7 @@ function updatePlayer() {
     player.bodyBounce = Math.sin(player.legAnimation) * 2;
 
     // Jump animation frame counter
-    if (jumpState !== 'grounded') {
+    if (player.jumpState !== 'grounded') {
         player.jumpAnimationFrame++;
     }
 
@@ -1205,11 +965,10 @@ function updatePlayer() {
                         player.y = platform.y - player.height;
                         player.vy = 0;
                         player.grounded = true;
-                        jumpState = 'grounded';
                         player.jumpState = 'grounded';
                         player.jumpCount = 0;
                         player.currentPlatform = platform;
-                        triggerScreenShake(1, 3);
+                        triggerScreenShake(1);
                         break;
                     }
                 }
@@ -1221,11 +980,10 @@ function updatePlayer() {
                     player.y = platform.y - player.height;
                     player.vy = 0;
                     player.grounded = true;
-                    jumpState = 'grounded';
                     player.jumpState = 'grounded';
                     player.jumpCount = 0;
                     player.currentPlatform = platform;
-                    triggerScreenShake(1, 3);
+                    triggerScreenShake(1);
                 }
             }
         }
@@ -1257,29 +1015,16 @@ function updatePlayer() {
                 player.y = platform.y - player.height;
                 player.vy = 0;
                 player.grounded = true;
-                jumpState = 'grounded';
                 player.jumpState = 'grounded';
                 player.jumpCount = 0;
                 player.currentPlatform = platform;
 
-                triggerScreenShake(1, 3);
+                triggerScreenShake(1);
             }
         }
     });
 
-    // PHASE 2: Collect checkpoints
-    currentLevelData.checkpoints.forEach(cp => {
-        if (!cp.collected &&
-            player.x < cp.x + 30 && player.x + player.width > cp.x &&
-            player.y < cp.y + 30 && player.y + player.height > cp.y) {
-
-            cp.collected = true;
-            player.lives = 3; // Full heal at checkpoint
-            playSound('checkpoint');
-            createExplosion(cp.x + 15, cp.y + 15, '#00ff00', 15);
-            triggerScreenShake(6, 10);
-        }
-    });
+    
 
     // Collect candies
     currentLevelData.candies.forEach(candy => {
@@ -1291,22 +1036,23 @@ function updatePlayer() {
 
             candy.collected = true;
 
-            // PHASE 1: Fixed combo system with validation
+            // Combo system with validation
             if (comboTimer > 0) {
-                combo = Math.min(combo + 1, 100);
+                combo = Math.min(combo + 1, 100); // Cap at 100 to prevent extreme values
                 comboTimer = SETTINGS.comboTimer;
+                
+                // Play combo sound for every 5 combo increments
                 if (combo % 5 === 0) {
                     playSound('combo');
-                    triggerScreenShake(2, 5);
+                    triggerScreenShake(2);
                 }
-                comboMultiplier = Math.min(combo, 5);
+                comboMultiplier = Math.min(combo, 5); // Max 5x multiplier
             } else {
                 combo = 1;
                 comboTimer = SETTINGS.comboTimer;
                 comboMultiplier = 1;
             }
 
-            // CRITICAL FIX: Multiply combo by base points, don't min it
             let points = 10 * comboMultiplier;
             if (player.powerUp === POWER_UPS.DOUBLE_POINTS) {
                 points = 20 * comboMultiplier;
@@ -1323,7 +1069,7 @@ function updatePlayer() {
             }
 
             playSound('collect');
-            triggerScreenShake(1, 3);
+            triggerScreenShake(1);
             createParticles(candy.x + 10, candy.y + 10, '#ffd700', 12);
         }
     });
@@ -1340,7 +1086,7 @@ function updatePlayer() {
             player.powerUp = powerUp.type;
             player.powerUpTimer = 300; // 5 seconds at 60fps
             playSound('powerup');
-            triggerScreenShake(4, 6);
+            triggerScreenShake(3);
             createExplosion(powerUp.x + 10, powerUp.y + 10, '#00ff00', 15);
         }
     });
@@ -1373,7 +1119,7 @@ function updatePlayer() {
             if (isStomp) {
                 // STOMP KILL - Player kills enemy by jumping on it
                 playSound('enemyHit');
-                triggerScreenShake(5, 8);
+                triggerScreenShake(5);
                 
                 // Create explosion effect at enemy position
                 createExplosion(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, '#ff6600', 25);
@@ -1413,7 +1159,7 @@ function updatePlayer() {
                 // Play combo sound if high combo
                 if (combo >= 3 && combo % 3 === 0) {
                     playSound('combo');
-                    triggerScreenShake(3, 5);
+                    triggerScreenShake(3);
                 }
                 
             } else if (player.powerUp === POWER_UPS.SHIELD) {
@@ -1422,12 +1168,12 @@ function updatePlayer() {
                 player.invincible = true;
                 player.invincibleTimer = 60; // 1 second
                 playSound('shield');
-                triggerScreenShake(5, 8);
+                triggerScreenShake(5);
             } else {
                 // Take damage (hit from side or bottom)
                 player.lives--;
                 playSound('hit');
-                triggerScreenShake(10, 15);
+                triggerScreenShake(8);
 
                 if (player.lives <= 0) {
                     gameState = 'gameover';
@@ -1440,15 +1186,9 @@ function updatePlayer() {
                         safeLocalStorage('set', 'candyLandyHighScore', highScore.toString());
                     }
                 } else {
-                    // PHASE 2: Respawn at last checkpoint if available
-                    const lastCheckpoint = currentLevelData.checkpoints.filter(cp => cp.collected).pop();
-                    if (lastCheckpoint) {
-                        player.x = lastCheckpoint.x + 15 - player.width / 2;
-                        player.y = lastCheckpoint.y - player.height;
-                    } else {
-                        player.x = 100;
-                        player.y = 400;
-                    }
+                    // Reset position
+                    player.x = 100;
+                    player.y = 400;
                     player.vx = 0;
                     player.vy = 0;
                     player.invincible = true;
@@ -1489,15 +1229,8 @@ function updatePlayer() {
                 safeLocalStorage('set', 'candyLandyHighScore', highScore.toString());
             }
         } else {
-            // PHASE 2: Respawn at last checkpoint if available
-            const lastCheckpoint = currentLevelData.checkpoints.filter(cp => cp.collected).pop();
-            if (lastCheckpoint) {
-                player.x = lastCheckpoint.x + 15 - player.width / 2;
-                player.y = lastCheckpoint.y - player.height;
-            } else {
-                player.x = 100;
-                player.y = 400;
-            }
+            player.x = 100;
+            player.y = 400;
             player.vx = 0;
             player.vy = 0;
             player.invincible = true;
@@ -1525,17 +1258,6 @@ function resetGame() {
     player.powerUpTimer = 0;
     player.invincible = false;
     player.invincibleTimer = 0;
-    // PHASE 2: Reset dash state
-    player.dashCooldown = 0;
-    player.dashTimer = 0;
-    player.isDashing = false;
-    // PHASE 2: Reset wall slide state
-    player.wallSliding = false;
-    player.wallDir = 0;
-    // PHASE 1: Reset jump state
-    jumpState = 'grounded';
-    player.jumpState = 'grounded';
-    player.jumpCount = 0;
     score = 0;
     currentLevel = 0;
     particles = [];
@@ -1575,7 +1297,7 @@ function drawStartScreen() {
     // Subtitle
     ctx.fillStyle = '#ff69b4';
     ctx.font = '24px Comic Sans MS';
-    ctx.fillText('Enhanced Edition v5!', canvas.width / 2, 190);
+    ctx.fillText('Enhanced Edition!', canvas.width / 2, 190);
 
     // Princess name
     ctx.fillStyle = '#ffd700';
@@ -1589,30 +1311,29 @@ function drawStartScreen() {
 
     // Controls box
     ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-    ctx.fillRect(200, 320, 400, 200);
+    ctx.fillRect(200, 320, 400, 180);
     ctx.strokeStyle = '#ff69b4';
     ctx.lineWidth = 3;
-    ctx.strokeRect(200, 320, 400, 200);
+    ctx.strokeRect(200, 320, 400, 180);
 
     ctx.fillStyle = '#333';
     ctx.font = '18px Comic Sans MS';
     ctx.textAlign = 'left';
     ctx.fillText('⬅️ ➡️ Arrow Keys - Move', 230, 355);
     ctx.fillText('⬆️ SPACE - Jump (Double tap for double jump!)', 230, 385);
-    ctx.fillText('⇧ SHIFT - Dash (invincible, double speed)', 230, 415);
-    ctx.fillText('🍬 Collect all candies to advance', 230, 445);
-    ctx.fillText('⚠️ Avoid enemies and don\'t fall!', 230, 475);
-    ctx.fillText('🔊 Keys 0-5 - Adjust volume', 230, 505);
+    ctx.fillText('🍬 Collect all candies to advance', 230, 415);
+    ctx.fillText('⚠️ Avoid enemies and don\'t fall!', 230, 445);
+    ctx.fillText('🔊 Keys 0-5 - Adjust volume', 230, 475);
 
     // High score
     ctx.textAlign = 'center';
     ctx.fillStyle = '#ff1493';
     ctx.font = '20px Comic Sans MS';
-    ctx.fillText('🏆 High Score: ' + highScore, canvas.width / 2, 540);
+    ctx.fillText('🏆 High Score: ' + highScore, canvas.width / 2, 520);
 
     // Animated character
     const bounce = Math.sin(animationFrame * 0.1) * 10;
-    drawCharacter(canvas.width / 2, 500 + bounce);
+    drawCharacter(canvas.width / 2, 480 + bounce);
 }
 
 function drawCloud(x, y, size) {
@@ -1786,7 +1507,6 @@ function drawGame() {
 
             // Platform warning border
             if (fadeProgress > 0.7) {
-
                 ctx.strokeStyle = `rgba(255, 0, 0, ${1 - fadeProgress})`;
                 ctx.lineWidth = 3;
                 ctx.strokeRect(platform.x, platform.y, platform.width, platform.height);
@@ -1795,40 +1515,6 @@ function drawGame() {
             // Platform highlight
             ctx.fillStyle = `rgba(255, 255, 255, ${0.3 * alpha})`;
             ctx.fillRect(platform.x, platform.y, platform.width, 5);
-        }
-    });
-
-    // PHASE 2: Draw checkpoints
-    currentLevelData.checkpoints.forEach(cp => {
-        if (!cp.collected) {
-            // Checkpoint flag
-            ctx.fillStyle = '#00ff00';
-            ctx.fillRect(cp.x + 12, cp.y, 6, 30);
-            
-            // Flag
-            ctx.fillStyle = '#00ff00';
-            ctx.beginPath();
-            ctx.moveTo(cp.x + 18, cp.y);
-            ctx.lineTo(cp.x + 30, cp.y + 7);
-            ctx.lineTo(cp.x + 18, cp.y + 14);
-            ctx.fill();
-            
-            // Checkpoint glow
-            ctx.fillStyle = 'rgba(0, 255, 0, 0.2)';
-            ctx.beginPath();
-            ctx.arc(cp.x + 15, cp.y + 15, 20, 0, Math.PI * 2);
-            ctx.fill();
-        } else {
-            // Collected checkpoint (grayed out)
-            ctx.fillStyle = '#666666';
-            ctx.fillRect(cp.x + 12, cp.y, 6, 30);
-            
-            ctx.fillStyle = '#666666';
-            ctx.beginPath();
-            ctx.moveTo(cp.x + 18, cp.y);
-            ctx.lineTo(cp.x + 30, cp.y + 7);
-            ctx.lineTo(cp.x + 18, cp.y + 14);
-            ctx.fill();
         }
     });
 
@@ -1876,7 +1562,6 @@ function drawGame() {
                 case POWER_UPS.SPEED: glowColor = 'rgba(255, 255, 0, 0.3)'; break;
                 case POWER_UPS.SHIELD: glowColor = 'rgba(0, 255, 0, 0.3)'; break;
                 case POWER_UPS.DOUBLE_POINTS: glowColor = 'rgba(255, 0, 255, 0.3)'; break;
-                case POWER_UPS.DASH: glowColor = 'rgba(255, 128, 0, 0.3)'; break;
             }
             ctx.fillStyle = glowColor;
             ctx.beginPath();
@@ -1893,9 +1578,7 @@ function drawGame() {
             ctx.fillStyle = '#333';
             ctx.font = 'bold 14px Arial';
             ctx.textAlign = 'center';
-            let symbol = '⚡';
-            if (powerUp.type === POWER_UPS.DASH) symbol = '💨';
-            ctx.fillText(symbol, powerUp.x + 10, powerUp.y + 15 + bounce);
+            ctx.fillText('⚡', powerUp.x + 10, powerUp.y + 15 + bounce);
         }
     });
 
@@ -1956,9 +1639,6 @@ function drawGame() {
     // HUD
     drawHUD();
     
-    // PHASE 3: Draw mini-map
-    drawMiniMap();
-    
     ctx.restore();
 }
 
@@ -1966,27 +1646,17 @@ function drawPlayer() {
     let playerColor = '#ff69b4';
     let hasGlow = false;
 
-    // PHASE 3: Invincibility visual effect with transparency pulsing
-    if (player.invincible && !player.isDashing) {
-        const alpha = 0.5 + Math.sin(animationFrame * 0.3) * 0.3;
-        ctx.globalAlpha = alpha;
-    }
+    // Power-up visual effects - REMOVED sparkling/firework effects
+    // (Glow effects around character removed as requested)
 
-    // PHASE 2: Dash trail effect
-    if (player.isDashing) {
-        ctx.fillStyle = 'rgba(255, 255, 0, 0.5)';
-        ctx.fillRect(player.x - 20, player.y, 40, player.height);
-    }
-
-    // PHASE 2: Wall slide effect
-    if (player.wallSliding) {
-        ctx.fillStyle = 'rgba(0, 255, 255, 0.3)';
-        ctx.fillRect(player.x - 5, player.y, player.width + 10, player.height);
+    // Invincibility blinking
+    if (player.invincible && Math.floor(animationFrame / 5) % 2 === 0) {
+        return; // Don't draw when blinking
     }
 
     // Calculate hair animation based on movement
     const isRunning = Math.abs(player.vx) > 0.1;
-    const isJumping = jumpState !== 'grounded';
+    const isJumping = player.jumpState !== 'grounded';
 
     // Hair flow animation parameters
     let hairFlowOffset = 0;
@@ -2145,18 +1815,15 @@ function drawPlayer() {
     ctx.beginPath();
     ctx.arc(player.x + 20, player.y - 12, 6, 0.1 * Math.PI, 0.9 * Math.PI);
     ctx.stroke();
-
-    // PHASE 3: Reset alpha after invincibility effect
-    ctx.globalAlpha = 1.0;
 }
 
 function drawHUD() {
     // HUD background
     ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-    ctx.fillRect(10, 10, 280, 230);
+    ctx.fillRect(10, 10, 280, 190);
     ctx.strokeStyle = '#ff69b4';
     ctx.lineWidth = 2;
-    ctx.strokeRect(10, 10, 280, 230);
+    ctx.strokeRect(10, 10, 280, 190);
 
     // Score
     ctx.fillStyle = '#ff1493';
@@ -2180,51 +1847,25 @@ function drawHUD() {
     const total = currentLevelData.candies.length;
     ctx.fillText('🍭 Candies: ' + collected + '/' + total, 20, 130);
 
-    // PHASE 2: Checkpoints indicator
-    const collectedCheckpoints = currentLevelData.checkpoints.filter(cp => cp.collected).length;
-    const totalCheckpoints = currentLevelData.checkpoints.length;
-    ctx.fillStyle = '#00ff00';
-    ctx.fillText('🚩 Checkpoints: ' + collectedCheckpoints + '/' + totalCheckpoints, 20, 150);
-
-    // PHASE 2: Timer display
-    if (levels[currentLevel].timeLimit) {
-        const timeRemaining = levels[currentLevel].timeLimit - Math.floor((animationFrame - levelStartTime) / 60);
-        const timePercent = timeRemaining / levels[currentLevel].timeLimit;
-
-        // Color gradient
-        let timeColor = '#00ff00';
-        if (timePercent < 0.5) timeColor = '#ffff00';
-        if (timePercent < 0.25) timeColor = '#ff0000';
-
-        ctx.fillStyle = timeColor;
-        ctx.font = '16px Comic Sans MS';
-        ctx.fillText(`⏱️ Time: ${Math.max(0, Math.ceil(timeRemaining))}s`, 20, 170);
-    }
-
     // Combo display
     if (combo > 1) {
         ctx.fillStyle = '#ffd700';
         ctx.font = 'bold 18px Comic Sans MS';
-        ctx.fillText('🔥 ' + combo + 'x COMBO!', 20, 190);
+        ctx.fillText('🔥 ' + combo + 'x COMBO!', 20, 150);
     }
 
     // Time bonus
     if (timeBonus > 0) {
         ctx.fillStyle = '#00ff00';
         ctx.font = '16px Comic Sans MS';
-        ctx.fillText('⏱️ Bonus: +' + timeBonus, 20, 210);
+        ctx.fillText('⏱️ Bonus: +' + timeBonus, 20, 170);
     }
 
-    // PHASE 2: Dash cooldown indicator
-    if (player.dashCooldown > 0) {
-        ctx.fillStyle = '#ffff00';
-        ctx.font = '16px Comic Sans MS';
-        ctx.fillText(`⚡ Dash: ${Math.ceil(player.dashCooldown / 60)}s`, 20, 230);
-    } else {
-        ctx.fillStyle = '#00ff00';
-        ctx.font = '16px Comic Sans MS';
-        ctx.fillText('⚡ Dash: Ready!', 20, 230);
-    }
+    // Jump indicator (double jump capability)
+    const jumpsRemaining = 2 - player.jumpCount;
+    ctx.fillStyle = jumpsRemaining > 0 ? '#00ffff' : '#888';
+    ctx.font = '16px Comic Sans MS';
+    ctx.fillText('🦘 Jumps: ' + '⬆️'.repeat(jumpsRemaining), 20, 190);
 
     // Power-up indicator
     if (player.powerUp) {
@@ -2248,57 +1889,6 @@ function drawHUD() {
     ctx.font = '16px Comic Sans MS';
     ctx.textAlign = 'right';
     ctx.fillText('🏆 Best: ' + highScore, canvas.width - 20, 590);
-}
-
-// PHASE 3: Mini-map function
-function drawMiniMap() {
-    // Don't draw if not playing
-    if (gameState !== 'playing') return;
-
-    const mapSize = 100;
-    const mapX = canvas.width - mapSize - 10;
-    const mapY = canvas.height - mapSize - 20;
-    const scale = mapSize / canvas.width;
-
-    // Background
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
-    ctx.fillRect(mapX, mapY, mapSize, mapSize * (canvas.height / canvas.width));
-
-    // Platforms (dark pink)
-    ctx.fillStyle = 'rgba(255, 105, 180, 0.8)';
-    currentLevelData.platforms.forEach(p => {
-        ctx.fillRect(mapX + p.x * scale, mapY + p.y * scale, p.width * scale, Math.max(2, p.height * scale));
-    });
-
-    // Disappearing platforms (lighter pink)
-    ctx.fillStyle = 'rgba(255, 100, 100, 0.6)';
-    currentLevelData.disappearingPlatforms.forEach(p => {
-        if (p.visible) {
-            ctx.fillRect(mapX + p.x * scale, mapY + p.y * scale, p.width * scale, Math.max(2, p.height * scale));
-        }
-    });
-
-    // Checkpoints (green flags)
-    currentLevelData.checkpoints.forEach(cp => {
-        if (!cp.collected) {
-            ctx.fillStyle = '#00ff00';
-            ctx.fillRect(mapX + cp.x * scale, mapY + cp.y * scale, 3, 5);
-        }
-    });
-
-    // Goal (green)
-    const goal = currentLevelData.goal;
-    ctx.fillStyle = '#00ff00';
-    ctx.fillRect(mapX + goal.x * scale, mapY + goal.y * scale, goal.width * scale, goal.height * scale);
-
-    // Player (cyan)
-    ctx.fillStyle = '#00ffff';
-    ctx.fillRect(mapX + player.x * scale, mapY + player.y * scale, Math.max(3, player.width * scale), Math.max(3, player.height * scale));
-
-    // Border
-    ctx.strokeStyle = '#ff69b4';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(mapX, mapY, mapSize, mapSize * (canvas.height / canvas.width));
 }
 
 function drawPauseScreen() {
@@ -2376,7 +1966,7 @@ function drawVictoryScreen() {
         // Create confetti bursts from multiple positions
         if (animationFrame % 30 === 0) {
             createConfetti(Math.random() * canvas.width, -10, 15);
-            triggerScreenShake(2, 5);
+            triggerScreenShake(2);
         }
         
         // Regular confetti particles

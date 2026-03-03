@@ -1,6 +1,6 @@
-# 🍬 Candy Landy - Enhanced Edition 🍬
+# 🍬 Candy Landy - Enhanced Edition v5 🍬
 
-A polished candy-themed platformer game with advanced features including multiple levels, power-ups, enemies, combo systems, and more!
+A polished candy-themed platformer game with advanced features including multiple levels, power-ups, enemies, combo systems, checkpoints, dash mechanics, wall jumps, and more!
 
 ## 🎮 Features
 
@@ -18,6 +18,16 @@ A polished candy-themed platformer game with advanced features including multipl
 - **⚡ Speed Boost** - Move 60% faster for 10 seconds
 - **★ Invincibility** - Defeat enemies on contact for 5 seconds
 - **↑↑ Triple Jump** - Jump three times in the air for 7.5 seconds
+- **💨 Dash** - Perform a powerful dash (SHIFT key) - invincible and double speed for 0.17 seconds, 1 second cooldown
+
+### NEW v5 Features
+- **🚩 Checkpoint System** - Collect checkpoint flags to heal and set respawn points
+- **⏱️ Visible Timer** - Level timer with color changes (green → yellow → red) as time runs low
+- **🚶 Wall Jump** - Slide down walls and jump off them for new traversal options
+- **💨 Dash Mechanic** - Quick dash with invincibility and visual trail effect
+- **🗺️ Mini-Map** - Bottom-right corner shows platforms, checkpoints, goal, and player position
+- **✨ Enhanced Visual Effects** - Invincibility transparency pulsing, improved screen shake intensities
+- **🐛 Critical Bug Fixes** - Combo multiplier fixed, double jump state tracking improved, particle system optimized
 
 ### Enemies
 - Red blob enemies that patrol platforms
@@ -26,13 +36,32 @@ A polished candy-themed platformer game with advanced features including multipl
 - Stomping enemies awards 50 points and triggers combo system
 - Defeating enemies creates explosion and star particle effects
 
+### Checkpoints (NEW!)
+- Green flag markers scattered throughout each level
+- Touching a checkpoint heals you to full health
+- Sets your respawn point - if you die or fall, you'll respawn at the last checkpoint
+- Collected checkpoints remain collected for the rest of the level
+- Checkpoints show progress in the HUD: 🚩 Checkpoints: 2/3
+
+### Level Timers (NEW!)
+- Each level has a time limit (Level 1: 2 min, Level 2: 3 min, Level 3: 4 min)
+- Timer displays in HUD with color changes:
+  - Green (>50% time remaining)
+  - Yellow (25-50% time remaining)
+  - Red (<25% time remaining - hurry up!)
+- Complete levels quickly for better time bonuses
+
 ### Visual Effects
 - **Particle Systems** for candy collection, jumps, and landings
-- **Screen Shake** when taking damage
+- **Screen Shake** with different intensities for various actions
 - **Animated Character** with pigtails, dress, and running animations
 - **Background Animations** with floating clouds and candies
 - **Glowing Effects** on candies and power-ups
 - **Smooth Game State Transitions** with polished UI
+- **Invincibility Transparency Pulsing** - Character fades in and out when invincible
+- **Dash Trail Effect** - Yellow trail follows character during dash
+- **Wall Slide Glow** - Cyan glow when sliding on walls
+- **Mini-Map** - Bottom-right corner shows all level elements
 
 ### Sound System
 - **Web Audio API** for crisp, generated sound effects
@@ -51,7 +80,12 @@ A polished candy-themed platformer game with advanced features including multipl
 ### Movement
 - **← → Arrow Keys** - Move left/right
 - **SPACE / ↑ Arrow** - Jump (supports double jump!)
+- **SHIFT** - Dash (grounded only, 1 second cooldown) - Invincible and double speed!
 - **ESC** - Pause/Resume game
+
+### NEW: Wall Jump
+- **Jump near wall** - Slide down slowly
+- **Jump again** - Launch off wall in opposite direction (great for climbing!)
 
 ### Sound Controls
 - **0** - Mute
@@ -98,34 +132,64 @@ A polished candy-themed platformer game with advanced features including multipl
 - **Visual**: Blue glow around character
 - **Strategy**: Essential for reaching high platforms and skipping difficult sections
 
+### 💨 Dash (NEW!)
+- **Effect**: Quick invincible dash with double speed
+- **Activation**: Press SHIFT while grounded
+- **Duration**: 10 frames (0.17 seconds dash, 1 second cooldown)
+- **Visual**: Yellow trail behind character
+- **Strategy**: Use to quickly cross dangerous areas or escape enemies
+
+## 🧗 Wall Jump Guide (NEW!)
+
+### How to Wall Jump
+1. **Approach a wall** while in the air
+2. **Character will slide down slowly** on the wall (cyan glow effect)
+3. **Press jump while sliding** to launch off in opposite direction
+4. **Gain vertical and horizontal momentum** to reach high places
+
+### Tips
+- Use wall jumps to climb narrow shafts
+- Chain wall jumps on alternating walls
+- Wall jumps can help you reach secret areas
+- You can wall jump on any solid platform edge
+
 ## 🏆 Tips for High Scores
 
 1. **Build Combos** - Collect candies quickly (within 1.5 seconds) for multipliers
 2. **Stomp Enemies** - Jump on enemies from above for 50 points each! Perfect for building combos
-3. **Watch the Clock** - Complete levels under 60 seconds for maximum time bonus
+3. **Watch the Clock** - Complete levels quickly for time bonuses (timer shows urgency!)
 4. **Collect Everything** - Don't miss candies or power-ups
 5. **Defeat Enemies** - Use stomp jumps or invincibility to defeat enemies for bonus points
 6. **Plan Your Route** - Memorize platform patterns and disappearing timings
 7. **Use Power-Ups Wisely** - Save invincibility for enemy-dense areas
+8. **Collect Checkpoints** - They heal you and provide safety nets
+9. **Use Wall Jumps** - Master wall jumping to reach high platforms and bypass enemies
+10. **Dash Strategically** - Use dash to quickly cross gaps or dodge enemies
 
 ## 🌟 Level Guide
 
 ### Level 1: Tutorial
 - Introduces basic platforming
-- Single speed power-up
-- No enemies
+- Two checkpoints for safety
+- 3 stomp-able enemies
+- Time limit: 2 minutes
 - Perfect for learning mechanics
 
 ### Level 2: Moving Platforms
 - Introduces moving and disappearing platforms
+- Two checkpoints
+- Dash power-up available
 - First enemies appear
-- Multiple power-ups available
+- Time limit: 3 minutes
 - Requires timing and precision
 
-### Level 3+: Challenge Mode
-- All platform types
-- Multiple enemies
-- Complex platform layouts
+### Level 3: Challenge Mode
+- All platform types including disappearing
+- Three checkpoints
+- All power-up types available (including dash!)
+- Multiple enemies in tight spaces
+- Time limit: 4 minutes
+- Complex platform layouts requiring wall jumps
 - Requires mastery of all mechanics
 
 ## 🔧 Technical Features
@@ -135,20 +199,30 @@ A polished candy-themed platformer game with advanced features including multipl
 - Smooth collision detection
 - Platform edge handling
 - Knockback on damage
+- **Wall sliding physics** - Slow fall when near walls
+- **Wall jump mechanics** - Launch off walls with directional momentum
+- **Dash mechanics** - Brief invincibility with double speed
 
 ### Audio
 - Web Audio API implementation
 - Procedurally generated sounds (no external files needed)
 - Master and SFX volume controls
+- **NEW sounds**: Dash, Wall Jump, Checkpoint
 
 ### Storage
 - localStorage for high scores
 - No external dependencies required
 
 ### Performance
-- Optimized particle systems
+- Optimized particle systems with size limits (max 100 per explosion, 300 total)
 - Efficient rendering loop
 - requestAnimationFrame for smooth 60fps gameplay
+
+### v5 Bug Fixes
+- **Fixed combo multiplier** - Now correctly multiplies points (was capping at 5x total)
+- **Double jump state tracking** - Explicit state variables prevent bugs
+- **Edge case validation** - Enemy spawn positions and disappearing platforms validated
+- **Particle system optimization** - Capped to prevent performance issues
 
 ## 🚀 How to Play
 
