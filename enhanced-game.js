@@ -68,7 +68,7 @@ function initAudio() {
         }
         return audioContext.state === 'running';
     }
-    
+
     try {
         // Check if Web Audio API is supported
         const AudioContextClass = window.AudioContext || window.webkitAudioContext;
@@ -77,9 +77,9 @@ function initAudio() {
             audioSupported = false;
             return false;
         }
-        
+
         audioContext = new AudioContextClass();
-        
+
         // Check if context is suspended (common in browsers that require user interaction)
         if (audioContext.state === 'suspended') {
             audioContextSuspended = true;
@@ -88,7 +88,7 @@ function initAudio() {
             audioContextSuspended = false;
             audioSupported = true;
         }
-        
+
         return true;
     } catch (e) {
         console.warn('Failed to initialize audio:', e.message);
@@ -104,7 +104,7 @@ function resumeAudio() {
         initAudio();
         return;
     }
-    
+
     if (audioContext.state === 'suspended') {
         audioContext.resume().then(() => {
             audioContextSuspended = false;
@@ -122,10 +122,10 @@ function playSound(type) {
     // Graceful degradation - silently return if audio not available
     if (!audioSupported) return;
     if (!initAudio()) return;
-    
+
     // Try to resume suspended context
     resumeAudio();
-    
+
     // If still suspended after resume attempt, don't play
     if (!audioContext || audioContext.state !== 'running') return;
 
@@ -288,16 +288,16 @@ function startBackgroundMusic() {
     if (isMusicPlaying) return;
     if (!audioSupported) return;
     if (!initAudio()) return;
-    
+
     // Resume suspended context
     resumeAudio();
-    
+
     // Don't start if context is still suspended
     if (audioContext && audioContext.state === 'suspended') {
         // Will try again when user interacts
         return;
     }
-    
+
     isMusicPlaying = true;
 
     function playNextNote() {
@@ -436,12 +436,12 @@ function createParticles(x, y, color, count = 10, options = {}) {
     }
     // PHASE 1: Limit particle count for performance
     count = Math.max(0, Math.min(count, 100));
-    
+
     // PHASE 1: Limit total particles to prevent performance issues
     if (particles.length > 300) {
         particles.splice(0, Math.min(count, particles.length - 300));
     }
-    
+
     const defaultOptions = {
         spread: 8,
         gravity: 0.1,
@@ -450,13 +450,13 @@ function createParticles(x, y, color, count = 10, options = {}) {
         fade: 0.02,
         shape: 'circle' // 'circle', 'square', 'star'
     };
-    
+
     const config = { ...defaultOptions, ...options };
-    
+
     for (let i = 0; i < count; i++) {
         const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.5;
         const speed = Math.random() * config.spread + 2;
-        
+
         particles.push({
             x: x,
             y: y,
@@ -478,7 +478,7 @@ function createParticles(x, y, color, count = 10, options = {}) {
 // Enhanced confetti particles for victory
 function createConfetti(x, y, count = 20) {
     const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff', '#ff69b4', '#ffd700', '#ff4500', '#9370db'];
-    
+
     for (let i = 0; i < count; i++) {
         const color = colors[Math.floor(Math.random() * colors.length)];
         createParticles(x, y, color, 1, {
@@ -504,16 +504,16 @@ function createExplosion(x, y, color, count = 30) {
     }
     // PHASE 1: Limit particle count for performance (cap at 100)
     count = Math.max(0, Math.min(count, 100));
-    
+
     // PHASE 1: Limit total particles to prevent performance issues
     if (particles.length > 300) {
         particles.splice(0, Math.min(count, particles.length - 300));
     }
-    
+
     for (let i = 0; i < count; i++) {
         const angle = (Math.PI * 2 * i) / count;
         const speed = Math.random() * 10 + 5;
-        
+
         particles.push({
             x: x,
             y: y,
@@ -539,7 +539,7 @@ function updateParticles() {
         p.y += p.vy;
         p.vy += p.gravity || 0.1;
         p.life -= p.fade || 0.02;
-        
+
         if (p.rotation !== undefined) {
             p.rotation += p.rotationSpeed || 0;
         }
@@ -622,7 +622,7 @@ function drawStar(cx, cy, outerRadius, innerRadius, points) {
         const angle = (i * Math.PI) / points;
         const x = cx + Math.cos(angle) * radius;
         const y = cy + Math.sin(angle) * radius;
-        
+
         if (i === 0) {
             ctx.moveTo(x, y);
         } else {
@@ -1120,13 +1120,13 @@ function updatePlayer() {
 
     // Physics with terminal velocity
     player.vy += 0.8;
-    
+
     // Cap fall speed to prevent tunneling through platforms
     const TERMINAL_VELOCITY = 20;
     if (player.vy > TERMINAL_VELOCITY) {
         player.vy = TERMINAL_VELOCITY;
     }
-    
+
     player.x += player.vx;
     player.y += player.vy;
 
@@ -1200,10 +1200,10 @@ function updatePlayer() {
         if (player.vy > 10) {
             const steps = Math.ceil(player.vy / 10);
             const stepSize = player.vy / steps;
-            
+
             for (let i = 0; i <= steps; i++) {
                 const checkY = player.y - player.vy + (stepSize * i);
-                
+
                 if (checkPlatformCollision(player.x, checkY, platform)) {
                     if (player.vy > 0 && (player.y - player.vy) < platform.y) {
                         player.y = platform.y - player.height;
@@ -1370,7 +1370,7 @@ function updatePlayer() {
             const playerBottom = player.y + player.height;
             const enemyTop = enemy.y;
             const enemyCenter = enemy.y + enemy.height / 2;
-            
+
             // Player must be falling and landing on top of enemy
             const isStomp = player.vy > 0 && playerBottom < enemyCenter;
 
@@ -1378,10 +1378,10 @@ function updatePlayer() {
                 // STOMP KILL - Player kills enemy by jumping on it
                 playSound('enemyHit');
                 triggerScreenShake(5, 8);
-                
+
                 // Create explosion effect at enemy position
                 createExplosion(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, '#ff6600', 25);
-                
+
                 // Create star burst particles for successful stomp
                 createParticles(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, '#ffff00', 15, {
                     spread: 12,
@@ -1391,11 +1391,11 @@ function updatePlayer() {
                     fade: 0.015,
                     shape: 'star'
                 });
-                
+
                 // Award points for killing enemy
                 const enemyPoints = 50;
                 score += enemyPoints;
-                
+
                 // Add to combo if active
                 if (comboTimer > 0) {
                     combo++;
@@ -1406,20 +1406,20 @@ function updatePlayer() {
                     comboTimer = SETTINGS.comboTimer;
                     comboMultiplier = 1;
                 }
-                
+
                 // Bounce player upward slightly
                 player.vy = -10;
                 player.grounded = false;
-                
+
                 // Remove the enemy
                 enemies.splice(enemyIndex, 1);
-                
+
                 // Play combo sound if high combo
                 if (combo >= 3 && combo % 3 === 0) {
                     playSound('combo');
                     triggerScreenShake(3, 5);
                 }
-                
+
             } else if (player.powerUp === POWER_UPS.SHIELD) {
                 // Shield protects, but deactivates power-up
                 player.powerUp = null;
@@ -1741,10 +1741,115 @@ function drawCharacter(x, y) {
 }
 
 function drawGame() {
+    // Draw HUD first (before screen shake - this will stay stable)
+    // HUD background
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+    ctx.fillRect(10, 10, 280, 250);
+    ctx.strokeStyle = '#ff69b4';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(10, 10, 280, 250);
+
+    // Score
+    ctx.fillStyle = '#ff1493';
+    ctx.font = 'bold 20px Comic Sans MS';
+    ctx.textAlign = 'left';
+    ctx.fillText('🍬 Score: ' + score, 20, 40);
+
+    // Lives
+    ctx.fillText('❤️ Lives: ' + '❤️'.repeat(player.lives), 20, 65);
+
+    // Jump indicator (shows how many jumps are available)
+    const jumpsRemaining = 2 - player.jumpCount;
+    ctx.fillStyle = jumpsRemaining > 0 ? '#00ffff' : '#888';
+    ctx.font = 'bold 16px Comic Sans MS';
+    ctx.fillText('🦘 Jumps: ' + '⬆️'.repeat(jumpsRemaining), 20, 90);
+
+    // Princess name
+    ctx.fillStyle = '#ffd700';
+    ctx.font = 'bold 16px Comic Sans MS';
+    ctx.fillText('👑 Princess Emmaline', 20, 110);
+
+    // Level
+    ctx.fillText('🎮 Level: ' + (currentLevel + 1) + '/' + levels.length, 20, 130);
+
+    // Candies remaining
+    const collected = currentLevelData.candies.filter(c => c.collected).length;
+    const total = currentLevelData.candies.length;
+    ctx.fillText('🍭 Candies: ' + collected + '/' + total, 20, 150);
+
+    // PHASE 2: Checkpoints indicator
+    const collectedCheckpoints = currentLevelData.checkpoints.filter(cp => cp.collected).length;
+    const totalCheckpoints = currentLevelData.checkpoints.length;
+    ctx.fillStyle = '#00ff00';
+    ctx.fillText('🚩 Checkpoints: ' + collectedCheckpoints + '/' + totalCheckpoints, 20, 170);
+
+    // PHASE 2: Timer display
+    if (levels[currentLevel].timeLimit) {
+        const timeRemaining = levels[currentLevel].timeLimit - Math.floor((animationFrame - levelStartTime) / 60);
+        const timePercent = timeRemaining / levels[currentLevel].timeLimit;
+
+        // Color gradient
+        let timeColor = '#00ff00';
+        if (timePercent < 0.5) timeColor = '#ffff00';
+        if (timePercent < 0.25) timeColor = '#ff0000';
+
+        ctx.fillStyle = timeColor;
+        ctx.font = '16px Comic Sans MS';
+        ctx.fillText(`⏱️ Time: ${Math.max(0, Math.ceil(timeRemaining))}s`, 20, 190);
+    }
+
+    // Combo display
+    if (combo > 1) {
+        ctx.fillStyle = '#ffd700';
+        ctx.font = 'bold 18px Comic Sans MS';
+        ctx.fillText('🔥 ' + combo + 'x COMBO!', 20, 210);
+    }
+
+    // Time bonus
+    if (timeBonus > 0) {
+        ctx.fillStyle = '#00ff00';
+        ctx.font = '16px Comic Sans MS';
+        ctx.fillText('⏱️ Bonus: +' + timeBonus, 20, 230);
+    }
+
+    // PHASE 2: Dash cooldown indicator
+    if (player.dashCooldown > 0) {
+        ctx.fillStyle = '#ffff00';
+        ctx.font = '16px Comic Sans MS';
+        ctx.fillText(`⚡ Dash: ${Math.ceil(player.dashCooldown / 60)}s`, 20, 250);
+    } else {
+        ctx.fillStyle = '#00ff00';
+        ctx.font = '16px Comic Sans MS';
+        ctx.fillText('⚡ Dash: Ready!', 20, 250);
+    }
+
+    // Power-up indicator
+    if (player.powerUp) {
+        ctx.fillStyle = 'rgba(0, 255, 0, 0.9)';
+        ctx.fillRect(canvas.width - 120, 10, 110, 40);
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 14px Comic Sans MS';
+        ctx.textAlign = 'center';
+        ctx.fillText('⚡ ' + player.powerUp.toUpperCase(), canvas.width - 65, 35);
+    }
+
+    // Volume indicator
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+    ctx.fillRect(canvas.width - 120, 55, 110, 25);
+    ctx.fillStyle = '#333';
+    ctx.font = '12px Comic Sans MS';
+    ctx.fillText('🔊 ' + Math.round(SETTINGS.volume * 100) + '% (0-5)', canvas.width - 65, 72);
+
+    // High score
+    ctx.fillStyle = '#ff1493';
+    ctx.font = '16px Comic Sans MS';
+    ctx.textAlign = 'right';
+    ctx.fillText('🏆 Best: ' + highScore, canvas.width - 20, 590);
+
     // Apply screen shake
     ctx.save();
     ctx.translate(screenShake.x, screenShake.y);
-    
+
     // Gradient sky background
     const skyGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
     skyGradient.addColorStop(0, '#87CEEB');
@@ -1808,7 +1913,7 @@ function drawGame() {
             // Checkpoint flag
             ctx.fillStyle = '#00ff00';
             ctx.fillRect(cp.x + 12, cp.y, 6, 30);
-            
+
             // Flag
             ctx.fillStyle = '#00ff00';
             ctx.beginPath();
@@ -1816,7 +1921,7 @@ function drawGame() {
             ctx.lineTo(cp.x + 30, cp.y + 7);
             ctx.lineTo(cp.x + 18, cp.y + 14);
             ctx.fill();
-            
+
             // Checkpoint glow
             ctx.fillStyle = 'rgba(0, 255, 0, 0.2)';
             ctx.beginPath();
@@ -1826,7 +1931,7 @@ function drawGame() {
             // Collected checkpoint (grayed out)
             ctx.fillStyle = '#666666';
             ctx.fillRect(cp.x + 12, cp.y, 6, 30);
-            
+
             ctx.fillStyle = '#666666';
             ctx.beginPath();
             ctx.moveTo(cp.x + 18, cp.y);
@@ -1959,10 +2064,10 @@ function drawGame() {
 
     // HUD
     drawHUD();
-    
+
     // PHASE 3: Draw mini-map
     drawMiniMap();
-    
+
     ctx.restore();
 }
 
@@ -2154,106 +2259,6 @@ function drawPlayer() {
     ctx.globalAlpha = 1.0;
 }
 
-function drawHUD() {
-    // HUD background
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-    ctx.fillRect(10, 10, 280, 230);
-    ctx.strokeStyle = '#ff69b4';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(10, 10, 280, 230);
-
-    // Score
-    ctx.fillStyle = '#ff1493';
-    ctx.font = 'bold 20px Comic Sans MS';
-    ctx.textAlign = 'left';
-    ctx.fillText('🍬 Score: ' + score, 20, 40);
-
-    // Lives
-    ctx.fillText('❤️ Lives: ' + '❤️'.repeat(player.lives), 20, 65);
-
-    // Princess name
-    ctx.fillStyle = '#ffd700';
-    ctx.font = 'bold 16px Comic Sans MS';
-    ctx.fillText('👑 Princess Emmaline', 20, 90);
-
-    // Level
-    ctx.fillText('🎮 Level: ' + (currentLevel + 1) + '/' + levels.length, 20, 110);
-
-    // Candies remaining
-    const collected = currentLevelData.candies.filter(c => c.collected).length;
-    const total = currentLevelData.candies.length;
-    ctx.fillText('🍭 Candies: ' + collected + '/' + total, 20, 130);
-
-    // PHASE 2: Checkpoints indicator
-    const collectedCheckpoints = currentLevelData.checkpoints.filter(cp => cp.collected).length;
-    const totalCheckpoints = currentLevelData.checkpoints.length;
-    ctx.fillStyle = '#00ff00';
-    ctx.fillText('🚩 Checkpoints: ' + collectedCheckpoints + '/' + totalCheckpoints, 20, 150);
-
-    // PHASE 2: Timer display
-    if (levels[currentLevel].timeLimit) {
-        const timeRemaining = levels[currentLevel].timeLimit - Math.floor((animationFrame - levelStartTime) / 60);
-        const timePercent = timeRemaining / levels[currentLevel].timeLimit;
-
-        // Color gradient
-        let timeColor = '#00ff00';
-        if (timePercent < 0.5) timeColor = '#ffff00';
-        if (timePercent < 0.25) timeColor = '#ff0000';
-
-        ctx.fillStyle = timeColor;
-        ctx.font = '16px Comic Sans MS';
-        ctx.fillText(`⏱️ Time: ${Math.max(0, Math.ceil(timeRemaining))}s`, 20, 170);
-    }
-
-    // Combo display
-    if (combo > 1) {
-        ctx.fillStyle = '#ffd700';
-        ctx.font = 'bold 18px Comic Sans MS';
-        ctx.fillText('🔥 ' + combo + 'x COMBO!', 20, 190);
-    }
-
-    // Time bonus
-    if (timeBonus > 0) {
-        ctx.fillStyle = '#00ff00';
-        ctx.font = '16px Comic Sans MS';
-        ctx.fillText('⏱️ Bonus: +' + timeBonus, 20, 210);
-    }
-
-    // PHASE 2: Dash cooldown indicator
-    if (player.dashCooldown > 0) {
-        ctx.fillStyle = '#ffff00';
-        ctx.font = '16px Comic Sans MS';
-        ctx.fillText(`⚡ Dash: ${Math.ceil(player.dashCooldown / 60)}s`, 20, 230);
-    } else {
-        ctx.fillStyle = '#00ff00';
-        ctx.font = '16px Comic Sans MS';
-        ctx.fillText('⚡ Dash: Ready!', 20, 230);
-    }
-
-    // Power-up indicator
-    if (player.powerUp) {
-        ctx.fillStyle = 'rgba(0, 255, 0, 0.9)';
-        ctx.fillRect(canvas.width - 120, 10, 110, 40);
-        ctx.fillStyle = '#fff';
-        ctx.font = 'bold 14px Comic Sans MS';
-        ctx.textAlign = 'center';
-        ctx.fillText('⚡ ' + player.powerUp.toUpperCase(), canvas.width - 65, 35);
-    }
-
-    // Volume indicator
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-    ctx.fillRect(canvas.width - 120, 55, 110, 25);
-    ctx.fillStyle = '#333';
-    ctx.font = '12px Comic Sans MS';
-    ctx.fillText('🔊 ' + Math.round(SETTINGS.volume * 100) + '% (0-5)', canvas.width - 65, 72);
-
-    // High score
-    ctx.fillStyle = '#ff1493';
-    ctx.font = '16px Comic Sans MS';
-    ctx.textAlign = 'right';
-    ctx.fillText('🏆 Best: ' + highScore, canvas.width - 20, 590);
-}
-
 // PHASE 3: Mini-map function
 function drawMiniMap() {
     // Don't draw if not playing
@@ -2308,7 +2313,7 @@ function drawMiniMap() {
 function drawPauseScreen() {
     ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    
+
     ctx.fillStyle = '#fff';
     ctx.font = 'bold 48px Comic Sans MS';
     ctx.textAlign = 'center';
@@ -2316,11 +2321,11 @@ function drawPauseScreen() {
     ctx.shadowBlur = 20;
     ctx.fillText('⏸️ PAUSED', canvas.width / 2, canvas.height / 2);
     ctx.shadowBlur = 0;
-    
+
     ctx.font = '24px Comic Sans MS';
     ctx.fillText('Press ESC to Resume', canvas.width / 2, canvas.height / 2 + 60);
     ctx.fillText('Keys 0-5 to Adjust Volume', canvas.width / 2, canvas.height / 2 + 90);
-    
+
     // Volume indicator
     ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
     ctx.fillRect(canvas.width - 120, 10, 110, 30);
@@ -2382,7 +2387,7 @@ function drawVictoryScreen() {
             createConfetti(Math.random() * canvas.width, -10, 15);
             triggerScreenShake(2, 5);
         }
-        
+
         // Regular confetti particles
         const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff', '#ff69b4', '#ffd700'];
         for (let i = 0; i < 3; i++) {
