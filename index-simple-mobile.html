@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Candy Landy - Mobile Test</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            touch-action: manipulation;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fecfef 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 10px;
+        }
+
+        #gameContainer {
+            position: relative;
+            border: 4px solid #ff69b4;
+            border-radius: 15px;
+            box-shadow: 0 0 30px rgba(255, 105, 180, 0.6);
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px;
+            width: 100%;
+            max-width: 500px;
+        }
+
+        #gameCanvas {
+            display: block;
+            background: #87CEEB;
+            border-radius: 10px;
+            width: 100%;
+            height: auto;
+            image-rendering: pixelated;
+        }
+
+        #instructions {
+            color: #8b4513;
+            font-size: 14px;
+            text-align: center;
+            margin: 10px 0;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 10px;
+            border-radius: 10px;
+            border: 2px solid #ff69b4;
+        }
+
+        /* Mobile Controls */
+        #mobileControls {
+            position: absolute;
+            bottom: 20px;
+            left: 10px;
+            right: 10px;
+            display: none;
+            justify-content: space-between;
+            z-index: 100;
+        }
+
+        #mobileControls.visible {
+            display: flex;
+        }
+
+        .control-btn {
+            width: 70px;
+            height: 70px;
+            background: rgba(255, 255, 255, 0.95);
+            border: 4px solid #ff69b4;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            color: #ff1493;
+            cursor: pointer;
+            user-select: none;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .control-btn:active {
+            background: rgba(255, 105, 180, 0.5);
+            transform: scale(0.95);
+        }
+
+        #jumpBtn {
+            width: 90px;
+            height: 90px;
+            font-size: 36px;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        #d-pad {
+            display: grid;
+            grid-template-columns: repeat(3, 60px);
+            grid-template-rows: repeat(3, 60px);
+            gap: 5px;
+        }
+
+        .d-pad-btn {
+            background: rgba(255, 255, 255, 0.95);
+            border: 3px solid #ff69b4;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            color: #ff1493;
+            cursor: pointer;
+            width: 65px;
+            height: 65px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .d-pad-btn:active {
+            background: rgba(255, 105, 180, 0.5);
+            transform: scale(0.95);
+        }
+
+        .d-pad-up { grid-column: 2; grid-row: 1; }
+        .d-pad-left { grid-column: 1; grid-row: 2; }
+        .d-pad-right { grid-column: 3; grid-row: 2; }
+        .d-pad-down { grid-column: 2; grid-row: 3; }
+
+        #debug {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            z-index: 1000;
+            max-width: 200px;
+        }
+    </style>
+</head>
+<body>
+    <div id="debug">Debug info...</div>
+
+    <div id="gameContainer">
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+        <div id="instructions">
+            🎮 TAP THE JUMP BUTTON TO START!
+        </div>
+
+        <div id="mobileControls">
+            <div class="control-group">
+                <div id="d-pad">
+                    <div class="d-pad-btn d-pad-up" data-key="ArrowUp">↑</div>
+                    <div class="d-pad-btn d-pad-left" data-key="ArrowLeft">←</div>
+                    <div class="d-pad-btn d-pad-right" data-key="ArrowRight">→</div>
+                    <div class="d-pad-btn d-pad-down" data-key="ArrowDown">↓</div>
+                </div>
+            </div>
+            <div class="control-group">
+                <div id="jumpBtn" class="control-btn">↑</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="enhanced-game.js"></script>
+    <script>
+        const debug = document.getElementById('debug');
+        const mobileControls = document.getElementById('mobileControls');
+        const jumpBtn = document.getElementById('jumpBtn');
+        const dPadButtons = document.querySelectorAll('.d-pad-btn');
+
+        // Better mobile detection
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile/i.test(navigator.userAgent) || window.innerWidth < 768;
+
+        debug.innerHTML = `
+            <strong>Mobile Detection:</strong><br>
+            User Agent: ${navigator.userAgent.substring(0, 50)}...<br>
+            Screen Width: ${window.innerWidth}<br>
+            Is Mobile: ${isMobile}<br>
+            Touch Events: ${'ontouchstart' in window}
+        `;
+
+        // Show controls on mobile
+        if (isMobile) {
+            mobileControls.classList.add('visible');
+            console.log('✅ Mobile controls enabled');
+        } else {
+            console.log('ℹ️ Desktop mode - controls hidden');
+        }
+
+        // Touch handlers
+        function addTouchHandler(element, key) {
+            element.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('🎮 Touch start:', key);
+                handleInput(key, 'down');
+            });
+
+            element.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('🎮 Touch end:', key);
+                handleInput(key, 'up');
+            });
+
+            element.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('🖱️ Mouse down:', key);
+                handleInput(key, 'down');
+            });
+
+            element.addEventListener('mouseup', () => {
+                console.log('🖱️ Mouse up:', key);
+                handleInput(key, 'up');
+            });
+        }
+
+        // Add handlers to all buttons
+        dPadButtons.forEach(btn => {
+            const key = btn.dataset.key;
+            addTouchHandler(btn, key);
+        });
+
+        addTouchHandler(jumpBtn, ' ');
+
+        // Input handler
+        function handleInput(key, state) {
+            console.log('📥 Input:', key, state);
+
+            const eventType = state === 'down' ? 'keydown' : 'keyup';
+            const event = new KeyboardEvent(eventType, {
+                key: key,
+                code: key,
+                keyCode: key.charCodeAt(0),
+                which: key.charCodeAt(0),
+                bubbles: true,
+                cancelable: true
+            });
+
+            console.log('⚡ Dispatching:', eventType, event.key);
+            window.dispatchEvent(event);
+        }
+
+        // Prevent default touch on game canvas
+        document.getElementById('gameCanvas').addEventListener('touchstart', (e) => {
+            e.preventDefault();
+        }, { passive: false });
+    </script>
+</body>
+</html>
