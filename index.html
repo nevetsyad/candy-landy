@@ -65,13 +65,16 @@
 
         #mobileControls {
             display: none;
-            position: absolute;
+            position: fixed;
             bottom: 20px;
             left: 0;
             right: 0;
             justify-content: space-between;
             padding: 0 20px;
             box-sizing: border-box;
+            z-index: 1000;
+            background: rgba(255, 105, 180, 0.3);
+            border-top: 4px solid #ff69b4;
         }
 
         #mobileControls.active {
@@ -79,19 +82,25 @@
         }
 
         .control-btn {
-            width: 60px;
-            height: 60px;
-            background: rgba(255, 255, 255, 0.8);
-            border: 3px solid #ff69b4;
+            width: 70px;
+            height: 70px;
+            background: rgba(255, 255, 255, 0.9);
+            border: 4px solid #ff69b4;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 24px;
+            font-size: 28px;
             color: #ff1493;
-            margin: 0 5px;
+            margin: 0 8px;
             cursor: pointer;
             user-select: none;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+
+        .control-btn:active {
+            background: rgba(255, 105, 180, 0.7);
+            transform: scale(0.95);
         }
 
         .control-btn:active {
@@ -120,19 +129,23 @@
         }
 
         .d-pad-btn {
-            background: rgba(255, 255, 255, 0.8);
-            border: 2px solid #ff69b4;
-            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.9);
+            border: 3px solid #ff69b4;
+            border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 24px;
+            font-size: 28px;
             color: #ff1493;
             cursor: pointer;
+            width: 65px;
+            height: 65px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
         }
 
         .d-pad-btn:active {
-            background: rgba(255, 105, 180, 0.5);
+            background: rgba(255, 105, 180, 0.7);
+            transform: scale(0.95);
         }
 
         .d-pad-up { grid-column: 2; grid-row: 1; }
