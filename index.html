@@ -2,9 +2,16 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Candy Landy - Enhanced Edition v5</title>
     <style>
+        * {
+            touch-action: none;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
         body {
             margin: 0;
             padding: 0;
@@ -17,7 +24,7 @@
             min-height: 100vh;
             overflow: hidden;
         }
-        
+
         #gameContainer {
             position: relative;
             border: 4px solid #ff69b4;
@@ -25,14 +32,17 @@
             box-shadow: 0 0 30px rgba(255, 105, 180, 0.6);
             background: rgba(255, 255, 255, 0.1);
             padding: 10px;
+            max-width: 100%;
         }
-        
+
         #gameCanvas {
             display: block;
             background: #87CEEB;
             border-radius: 10px;
+            max-width: 100%;
+            height: auto;
         }
-        
+
         #gameTitle {
             color: #ff1493;
             font-size: 2em;
@@ -40,7 +50,7 @@
             margin-bottom: 10px;
             text-align: center;
         }
-        
+
         #instructions {
             color: #8b4513;
             font-size: 1.2em;
@@ -50,6 +60,117 @@
             padding: 10px;
             border-radius: 10px;
             border: 2px solid #ff69b4;
+            max-width: 100%;
+        }
+
+        #mobileControls {
+            display: none;
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            right: 0;
+            justify-content: space-between;
+            padding: 0 20px;
+            box-sizing: border-box;
+        }
+
+        #mobileControls.active {
+            display: flex;
+        }
+
+        .control-btn {
+            width: 60px;
+            height: 60px;
+            background: rgba(255, 255, 255, 0.8);
+            border: 3px solid #ff69b4;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: #ff1493;
+            margin: 0 5px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .control-btn:active {
+            background: rgba(255, 105, 180, 0.5);
+            transform: scale(0.95);
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        #jumpBtn {
+            width: 80px;
+            height: 80px;
+            font-size: 32px;
+            background: rgba(255, 255, 255, 0.9);
+        }
+
+        #d-pad {
+            display: grid;
+            grid-template-columns: repeat(3, 60px);
+            grid-template-rows: repeat(3, 60px);
+            gap: 5px;
+        }
+
+        .d-pad-btn {
+            background: rgba(255, 255, 255, 0.8);
+            border: 2px solid #ff69b4;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: #ff1493;
+            cursor: pointer;
+        }
+
+        .d-pad-btn:active {
+            background: rgba(255, 105, 180, 0.5);
+        }
+
+        .d-pad-up { grid-column: 2; grid-row: 1; }
+        .d-pad-left { grid-column: 1; grid-row: 2; }
+        .d-pad-right { grid-column: 3; grid-row: 2; }
+        .d-pad-down { grid-column: 2; grid-row: 3; }
+
+        @media (max-width: 768px) {
+            #gameTitle {
+                font-size: 1.5em;
+            }
+
+            #instructions {
+                font-size: 0.9em;
+                padding: 8px;
+                max-width: 90%;
+            }
+
+            #mobileControls {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                padding: 10px;
+                background: linear-gradient(transparent, rgba(0,0,0,0.3));
+            }
+
+            .control-btn, .d-pad-btn {
+                width: 50px;
+                height: 50px;
+                font-size: 20px;
+            }
+
+            #jumpBtn {
+                width: 70px;
+                height: 70px;
+                font-size: 28px;
+            }
         }
     </style>
 </head>
@@ -60,7 +181,120 @@
         <div id="instructions">
             Use ARROW KEYS to move • SPACE/ENTER/UP to jump • Double tap for DOUBLE JUMP! • ESC to pause
         </div>
+
+        <!-- Mobile Controls -->
+        <div id="mobileControls">
+            <div class="control-group">
+                <div id="d-pad">
+                    <div class="d-pad-btn d-pad-up" data-key="ArrowUp">↑</div>
+                    <div class="d-pad-btn d-pad-left" data-key="ArrowLeft">←</div>
+                    <div class="d-pad-btn d-pad-right" data-key="ArrowRight">→</div>
+                    <div class="d-pad-btn d-pad-down" data-key="ArrowDown">↓</div>
+                </div>
+            </div>
+            <div class="control-group">
+                <div id="jumpBtn" class="control-btn" data-key=" " data-action="jump">↑</div>
+            </div>
+        </div>
     </div>
     <script src="enhanced-game.js"></script>
+    <script>
+        // Mobile detection and control setup
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        const mobileControls = document.getElementById('mobileControls');
+        const mobileControlsButton = document.getElementById('mobileControls');
+        const jumpBtn = document.getElementById('jumpBtn');
+        const dPadButtons = document.querySelectorAll('.d-pad-btn');
+
+        if (isMobile) {
+            mobileControls.classList.add('active');
+
+            // Add touch handlers for D-pad
+            dPadButtons.forEach(btn => {
+                const key = btn.dataset.key;
+
+                btn.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    handleMobileInput(key, 'down');
+                });
+
+                btn.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    handleMobileInput(key, 'up');
+                });
+
+                // Also support mouse for testing
+                btn.addEventListener('mousedown', () => handleMobileInput(key, 'down'));
+                btn.addEventListener('mouseup', () => handleMobileInput(key, 'up'));
+                btn.addEventListener('mouseleave', () => handleMobileInput(key, 'up'));
+            });
+
+            // Add touch handler for jump button
+            jumpBtn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                handleMobileInput(' ', 'down');
+            });
+
+            jumpBtn.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                handleMobileInput(' ', 'up');
+            });
+
+            jumpBtn.addEventListener('mousedown', () => handleMobileInput(' ', 'down'));
+            jumpBtn.addEventListener('mouseup', () => handleMobileInput(' ', 'up'));
+            jumpBtn.addEventListener('mouseleave', () => handleMobileInput(' ', 'up'));
+
+            // Change instructions for mobile
+            document.getElementById('instructions').innerHTML =
+                '🎮 D-PAD to move • SPACE/UP to jump • Double tap for DOUBLE JUMP!';
+
+            // Hide mobile controls hint after 5 seconds
+            setTimeout(() => {
+                if (mobileControls.style.opacity !== '0') {
+                    mobileControls.style.opacity = '0.5';
+                }
+            }, 5000);
+        }
+
+        // Mobile input handler
+        const mobileKeyPresses = new Set();
+
+        function handleMobileInput(key, state) {
+            if (state === 'down') {
+                mobileKeyPresses.add(key);
+            } else {
+                mobileKeyPresses.delete(key);
+            }
+
+            // Trigger keydown/keyup events for game
+            if (key === ' ') {
+                if (state === 'down') {
+                    simulateKey(' ', true);
+                } else {
+                    simulateKey(' ', false);
+                }
+            } else {
+                simulateKey(key, state === 'down');
+            }
+        }
+
+        function simulateKey(key, isDown) {
+            const event = new KeyboardEvent(isDown ? 'keydown' : 'keyup', {
+                key: key,
+                code: key,
+                keyCode: key.charCodeAt(0),
+                which: key.charCodeAt(0),
+                bubbles: true
+            });
+            window.dispatchEvent(event);
+        }
+
+        // Prevent default touch behaviors
+        document.addEventListener('touchstart', function(e) {
+            if (e.target.closest('.control-btn, .d-pad-btn')) {
+                return;
+            }
+        }, { passive: false });
+    </script>
 </body>
 </html>

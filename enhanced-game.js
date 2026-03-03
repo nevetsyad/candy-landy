@@ -3,7 +3,11 @@
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
-// Canvas settings
+// Mobile detection and responsive canvas
+const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+const mobileControls = document.getElementById('mobileControls');
+
+// Set canvas to fixed size for consistent game logic
 canvas.width = 800;
 canvas.height = 600;
 
