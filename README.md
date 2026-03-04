@@ -2,6 +2,30 @@
 
 A polished candy-themed platformer game with advanced features including multiple levels, power-ups, enemies, combo systems, checkpoints, dash mechanics, wall jumps, and more!
 
+## 📁 Project Structure
+
+The codebase is organized into modular ES6 classes for better maintainability:
+
+```
+candy-landy/
+├── index.html          # Main HTML file with mobile support
+├── mobile.css          # Mobile-specific styles
+├── enhanced-game.js    # Legacy monolithic file (fallback)
+├── src/                # Modular source code
+│   ├── config.js       # Game constants and settings
+│   ├── audio.js        # Sound system (Web Audio API)
+│   ├── particles.js    # Particle system and effects
+│   ├── input.js        # Keyboard and touch input handling
+│   ├── levels.js       # Level data and management
+│   ├── player.js       # Player and Enemy classes
+│   ├── ui.js           # HUD, menus, screens
+│   ├── game.js         # Main game loop and controller
+│   └── README.md       # Module documentation
+└── README.md           # This file
+```
+
+See [src/README.md](src/README.md) for detailed module documentation.
+
 ## 🎮 Features
 
 ### Gameplay Enhancements
@@ -249,18 +273,41 @@ Tested on:
 ## 🎨 Customization
 
 ### Adjusting Difficulty
-Edit these constants in `enhanced-game.js`:
+Edit these constants in `src/config.js`:
 ```javascript
-const GRAVITY = 0.6;           // Gravity strength
-const JUMP_STRENGTH = -14;    // Jump power
-const MOVE_SPEED = 5;         // Movement speed
+// Physics constants
+export const PHYSICS = {
+    GRAVITY: 0.8,           // Gravity strength
+    PLAYER_SPEED: 5,        // Movement speed
+    JUMP_POWER: -16,        // Jump power
+    // ...
+};
 ```
 
 ### Adding New Levels
-Extend the `loadLevel()` method in the `Level` class with additional level designs.
+Add new level data to the `levelData` array in `src/levels.js`. Each level follows this structure:
+```javascript
+{
+    name: "Level Name",
+    description: "Level description",
+    thumbnail: "🎮",  // Emoji for level select
+    platforms: [...],
+    candies: [...],
+    enemies: [...],
+    // ...
+}
+```
 
 ### Modifying Power-Ups
-Adjust power-up durations and effects in the `collectPowerUp()` section of the update loop.
+Adjust power-up effects in `src/player.js` and durations in the `POWER_UPS` constant in `src/config.js`.
+
+### Module Development
+The game uses ES6 modules. To modify or extend functionality:
+1. Import what you need from the relevant module
+2. Extend or override the class/functionality
+3. Export your changes for use in other modules
+
+See `src/README.md` for the complete dependency graph and module documentation.
 
 ## 📝 Credits
 

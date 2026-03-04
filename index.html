@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Candy Landy - Enhanced Edition v5</title>
+    <link rel="stylesheet" href="mobile.css">
     <style>
         * {
             touch-action: none;
@@ -63,84 +64,6 @@
             max-width: 100%;
         }
 
-        #mobileControls {
-            display: none;
-            position: absolute;
-            bottom: 20px;
-            left: 0;
-            right: 0;
-            justify-content: space-between;
-            padding: 0 20px;
-            box-sizing: border-box;
-            z-index: 10;
-        }
-
-        #mobileControls.active {
-            display: flex;
-        }
-
-        .control-btn {
-            width: 70px;
-            height: 70px;
-            background: rgba(255, 255, 255, 0.9);
-            border: 4px solid #ff69b4;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 28px;
-            color: #ff1493;
-            margin: 0 8px;
-            cursor: pointer;
-            user-select: none;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
-        }
-
-        .control-btn:active {
-            background: rgba(255, 105, 180, 0.5);
-            transform: scale(0.95);
-        }
-
-        .control-group {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        #jumpBtn {
-            width: 80px;
-            height: 80px;
-            font-size: 32px;
-            background: rgba(255, 255, 255, 0.9);
-        }
-
-        #d-pad {
-            display: grid;
-            grid-template-columns: repeat(3, 60px);
-            grid-template-rows: repeat(3, 60px);
-            gap: 5px;
-        }
-
-        .d-pad-btn {
-            background: rgba(255, 255, 255, 0.9);
-            border: 3px solid #ff69b4;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 28px;
-            color: #ff1493;
-            cursor: pointer;
-            width: 65px;
-            height: 65px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
-        }
-
-        .d-pad-up { grid-column: 2; grid-row: 1; }
-        .d-pad-left { grid-column: 1; grid-row: 2; }
-        .d-pad-right { grid-column: 3; grid-row: 2; }
-        .d-pad-down { grid-column: 2; grid-row: 3; }
-
         @media (max-width: 768px) {
             #gameTitle {
                 font-size: 1.5em;
@@ -151,166 +74,378 @@
                 padding: 8px;
                 max-width: 90%;
             }
-
-            #mobileControls {
-                position: fixed;
-                bottom: 0;
-                left: 0;
-                right: 0;
-                padding: 10px;
-                background: linear-gradient(transparent, rgba(0,0,0,0.3));
-            }
-
-            .control-btn, .d-pad-btn {
-                width: 50px;
-                height: 50px;
-                font-size: 20px;
-            }
-
-            #jumpBtn {
-                width: 70px;
-                height: 70px;
-                font-size: 28px;
-            }
         }
     </style>
 </head>
 <body>
+    <!-- Tap to Play Overlay (iOS Audio Fix) -->
+    <div id="tapToPlayOverlay">
+        <div class="tap-title">🍬 Candy Landy 🍬</div>
+        <div class="tap-icon">👆</div>
+        <div class="tap-instruction">Tap anywhere to play!</div>
+    </div>
+
+    <!-- Landscape Prompt Overlay -->
+    <div id="landscapePrompt" class="hidden">
+        <div class="rotate-icon">📱↻</div>
+        <div class="rotate-text">Please rotate your device to landscape mode for the best experience!</div>
+    </div>
+
     <div id="gameContainer">
         <div id="gameTitle">🍬 Candy Landy 🍬</div>
         <canvas id="gameCanvas" width="800" height="600"></canvas>
         <div id="instructions">
-            Use ARROW KEYS to move • SPACE/ENTER/UP to jump • Double tap for DOUBLE JUMP! • ESC to pause
-        </div>
-
-        <!-- Mobile Controls -->
-        <div id="mobileControls">
-            <div class="control-group">
-                <div id="d-pad">
-                    <div class="d-pad-btn d-pad-up" data-key="ArrowUp">↑</div>
-                    <div class="d-pad-btn d-pad-left" data-key="ArrowLeft">←</div>
-                    <div class="d-pad-btn d-pad-right" data-key="ArrowRight">→</div>
-                    <div class="d-pad-btn d-pad-down" data-key="ArrowDown">↓</div>
-                </div>
-            </div>
-            <div class="control-group">
-                <div id="jumpBtn" class="control-btn" data-key=" " data-action="jump">↑</div>
-            </div>
+            Use ARROW KEYS to move • SPACE/ENTER/UP to jump • Double tap for DOUBLE JUMP! • SHIFT to dash • ESC to pause
         </div>
     </div>
-    <script src="enhanced-game.js"></script>
+
+    <!-- Mobile Touch Controls -->
+    <div id="mobileControls">
+        <!-- D-Pad for Movement -->
+        <div class="d-pad-container">
+            <div class="d-pad-btn d-pad-up" data-key="ArrowUp">
+                ↑
+                <span class="btn-label">Jump</span>
+            </div>
+            <div class="d-pad-btn d-pad-left" data-key="ArrowLeft">←</div>
+            <div class="d-pad-center"></div>
+            <div class="d-pad-btn d-pad-right" data-key="ArrowRight">→</div>
+            <div class="d-pad-btn d-pad-down" data-key="ArrowDown">↓</div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+            <button id="jumpBtn" class="action-btn" data-key=" " data-action="jump">
+                ⬆
+                <span class="btn-label">JUMP</span>
+            </button>
+            <button id="dashBtn" class="action-btn" data-key="Shift" data-action="dash">
+                💨
+                <span class="btn-label">DASH</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- ES6 Module Entry Point -->
+    <script type="module" src="src/game.js"></script>
+    
+    <!-- Fallback for browsers without ES6 module support -->
+    <script nomodule src="enhanced-game.js"></script>
     <script>
-        // Mobile detection and control setup
-        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
-        const mobileControls = document.getElementById('mobileControls');
-        const jumpBtn = document.getElementById('jumpBtn');
-        const dPadButtons = document.querySelectorAll('.d-pad-btn');
+        // ============================================
+        // MOBILE MANAGER - Handles all mobile-specific functionality
+        // ============================================
+        (function() {
+            'use strict';
 
-        console.log('=== Mobile Detection Debug ===');
-        console.log('User Agent:', navigator.userAgent);
-        console.log('Screen Width:', window.innerWidth);
-        console.log('Is Mobile:', isMobile);
-        console.log('Has Mobile Controls:', !!mobileControls);
-        console.log('Touch Events Available:', 'ontouchstart' in window);
+            // Element references
+            const tapToPlayOverlay = document.getElementById('tapToPlayOverlay');
+            const landscapePrompt = document.getElementById('landscapePrompt');
+            const mobileControls = document.getElementById('mobileControls');
+            const jumpBtn = document.getElementById('jumpBtn');
+            const dashBtn = document.getElementById('dashBtn');
+            const dPadButtons = document.querySelectorAll('.d-pad-btn');
 
-        // Always show controls for testing
-        if (mobileControls) {
-            mobileControls.classList.add('active');
-            console.log('✅ Mobile controls activated!');
-        } else {
-            console.log('❌ Mobile controls element not found!');
-        }
+            // State
+            let isMobile = false;
+            let gameStarted = false;
+            let audioInitialized = false;
 
-            // Add touch handlers for D-pad
-            dPadButtons.forEach(btn => {
-                const key = btn.dataset.key;
-
-                console.log('Adding handler for key:', key);
-
-                btn.addEventListener('touchstart', (e) => {
-                    e.preventDefault();
-                    console.log('Touch start for:', key);
-                    handleMobileInput(key, 'down');
-                });
-
-                btn.addEventListener('touchend', (e) => {
-                    e.preventDefault();
-                    console.log('Touch end for:', key);
-                    handleMobileInput(key, 'up');
-                });
-
-                // Also support mouse for testing
-                btn.addEventListener('mousedown', (e) => {
-                    e.preventDefault();
-                    console.log('Mouse down for:', key);
-                    handleMobileInput(key, 'down');
-                });
-
-                btn.addEventListener('mouseup', () => {
-                    console.log('Mouse up for:', key);
-                    handleMobileInput(key, 'up');
-                });
-            });
-
-            // Add touch handler for jump button
-            jumpBtn.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                console.log('Jump button touch start');
-                handleMobileInput(' ', 'down');
-            });
-
-            jumpBtn.addEventListener('touchend', (e) => {
-                e.preventDefault();
-                console.log('Jump button touch end');
-                handleMobileInput(' ', 'up');
-            });
-
-            jumpBtn.addEventListener('mousedown', () => {
-                console.log('Jump button mouse down');
-                handleMobileInput(' ', 'down');
-            });
-
-            jumpBtn.addEventListener('mouseup', () => {
-                console.log('Jump button mouse up');
-                handleMobileInput(' ', 'up');
-            });
-
-            // Change instructions for mobile
-            document.getElementById('instructions').innerHTML =
-                '🎮 D-PAD to move • SPACE/UP to jump • Double tap for DOUBLE JUMP!';
-
-            // Make controls more visible
-            mobileControls.style.opacity = '1';
-        }
-
-        // Mobile input handler
-        function handleMobileInput(key, state) {
-            console.log('handleMobileInput called:', key, state);
-
-            // Trigger keydown/keyup events for game
-            if (key === ' ') {
-                if (state === 'down') {
-                    simulateKey(' ', true);
-                } else {
-                    simulateKey(' ', false);
-                }
-            } else {
-                simulateKey(key, state === 'down');
+            // ============================================
+            // MOBILE DETECTION
+            // ============================================
+            function detectMobile() {
+                const userAgent = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                const touchScreen = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+                const smallScreen = window.innerWidth < 768;
+                
+                isMobile = userAgent || (touchScreen && smallScreen);
+                
+                console.log('=== Mobile Detection ===');
+                console.log('User Agent Mobile:', userAgent);
+                console.log('Touch Screen:', touchScreen);
+                console.log('Small Screen:', smallScreen);
+                console.log('Is Mobile:', isMobile);
+                
+                return isMobile;
             }
-        }
 
-        function simulateKey(key, isDown) {
-            console.log('simulateKey called:', key, isDown);
-            const event = new KeyboardEvent(isDown ? 'keydown' : 'keyup', {
-                key: key,
-                code: key,
-                keyCode: key.charCodeAt(0),
-                which: key.charCodeAt(0),
-                bubbles: true
-            });
-            console.log('Dispatching event:', event.type, event.key);
-            window.dispatchEvent(event);
-        }
+            // ============================================
+            // iOS AUDIO FIX - Tap to Play Overlay
+            // ============================================
+            function initAudioOnUserInteraction() {
+                if (audioInitialized) return;
+
+                // Try to initialize and resume audio context
+                if (typeof initAudio === 'function') {
+                    initAudio();
+                }
+                if (typeof resumeAudio === 'function') {
+                    resumeAudio();
+                }
+
+                audioInitialized = true;
+                console.log('✅ Audio initialized via user interaction');
+
+                // Hide the tap to play overlay
+                if (tapToPlayOverlay) {
+                    tapToPlayOverlay.classList.add('hidden');
+                }
+
+                // Start the game if not already started
+                if (!gameStarted && typeof gameState !== 'undefined' && gameState === 'start') {
+                    // Trigger game start
+                    const startEvent = new KeyboardEvent('keydown', {
+                        key: ' ',
+                        code: 'Space',
+                        keyCode: 32,
+                        which: 32,
+                        bubbles: true
+                    });
+                    window.dispatchEvent(startEvent);
+                    gameStarted = true;
+                }
+            }
+
+            function setupTapToPlay() {
+                if (!tapToPlayOverlay) return;
+
+                // Show overlay on mobile devices
+                if (isMobile) {
+                    tapToPlayOverlay.classList.remove('hidden');
+                }
+
+                // Listen for tap/click to initialize audio
+                tapToPlayOverlay.addEventListener('touchstart', function(e) {
+                    e.preventDefault();
+                    initAudioOnUserInteraction();
+                }, { passive: false });
+
+                tapToPlayOverlay.addEventListener('click', function(e) {
+                    initAudioOnUserInteraction();
+                });
+            }
+
+            // ============================================
+            // LANDSCAPE PROMPT
+            // ============================================
+            function checkOrientation() {
+                if (!isMobile || !landscapePrompt) return;
+
+                const isPortrait = window.innerHeight > window.innerWidth;
+                
+                if (isPortrait) {
+                    landscapePrompt.classList.remove('hidden');
+                } else {
+                    landscapePrompt.classList.add('hidden');
+                }
+            }
+
+            function setupLandscapePrompt() {
+                if (!landscapePrompt) return;
+
+                // Check initial orientation
+                checkOrientation();
+
+                // Listen for orientation changes
+                window.addEventListener('resize', checkOrientation);
+                window.addEventListener('orientationchange', function() {
+                    // Small delay to allow orientation to complete
+                    setTimeout(checkOrientation, 100);
+                });
+            }
+
+            // ============================================
+            // TOUCH CONTROLS
+            // ============================================
+            function simulateKey(key, isDown) {
+                console.log('simulateKey:', key, isDown ? 'DOWN' : 'UP');
+                
+                const event = new KeyboardEvent(isDown ? 'keydown' : 'keyup', {
+                    key: key,
+                    code: key === ' ' ? 'Space' : key,
+                    keyCode: key === ' ' ? 32 : key.charCodeAt(0),
+                    which: key === ' ' ? 32 : key.charCodeAt(0),
+                    bubbles: true,
+                    cancelable: true
+                });
+                
+                window.dispatchEvent(event);
+            }
+
+            function handleTouchStart(e, key) {
+                e.preventDefault();
+                console.log('Touch START:', key);
+                simulateKey(key, true);
+                
+                // Add visual feedback
+                if (e.target) {
+                    e.target.classList.add('pressed', 'active');
+                }
+            }
+
+            function handleTouchEnd(e, key) {
+                e.preventDefault();
+                console.log('Touch END:', key);
+                simulateKey(key, false);
+                
+                // Remove visual feedback
+                if (e.target) {
+                    e.target.classList.remove('pressed', 'active');
+                }
+            }
+
+            function setupTouchControls() {
+                if (!mobileControls) return;
+
+                // Show mobile controls
+                mobileControls.classList.add('active');
+                console.log('✅ Mobile controls activated');
+
+                // Setup D-Pad buttons
+                dPadButtons.forEach(btn => {
+                    const key = btn.dataset.key;
+                    if (!key) return;
+
+                    // Touch events
+                    btn.addEventListener('touchstart', (e) => handleTouchStart(e, key), { passive: false });
+                    btn.addEventListener('touchend', (e) => handleTouchEnd(e, key), { passive: false });
+                    btn.addEventListener('touchcancel', (e) => handleTouchEnd(e, key), { passive: false });
+
+                    // Mouse events for testing on desktop
+                    btn.addEventListener('mousedown', (e) => {
+                        e.preventDefault();
+                        handleTouchStart(e, key);
+                    });
+                    btn.addEventListener('mouseup', (e) => handleTouchEnd(e, key));
+                    btn.addEventListener('mouseleave', (e) => {
+                        if (btn.classList.contains('pressed')) {
+                            handleTouchEnd(e, key);
+                        }
+                    });
+                });
+
+                // Setup Jump button
+                if (jumpBtn) {
+                    jumpBtn.addEventListener('touchstart', (e) => handleTouchStart(e, ' '), { passive: false });
+                    jumpBtn.addEventListener('touchend', (e) => handleTouchEnd(e, ' '), { passive: false });
+                    jumpBtn.addEventListener('touchcancel', (e) => handleTouchEnd(e, ' '), { passive: false });
+
+                    jumpBtn.addEventListener('mousedown', (e) => {
+                        e.preventDefault();
+                        handleTouchStart(e, ' ');
+                    });
+                    jumpBtn.addEventListener('mouseup', (e) => handleTouchEnd(e, ' '));
+                    jumpBtn.addEventListener('mouseleave', (e) => {
+                        if (jumpBtn.classList.contains('pressed')) {
+                            handleTouchEnd(e, ' ');
+                        }
+                    });
+                }
+
+                // Setup Dash button
+                if (dashBtn) {
+                    dashBtn.addEventListener('touchstart', (e) => handleTouchStart(e, 'Shift'), { passive: false });
+                    dashBtn.addEventListener('touchend', (e) => handleTouchEnd(e, 'Shift'), { passive: false });
+                    dashBtn.addEventListener('touchcancel', (e) => handleTouchEnd(e, 'Shift'), { passive: false });
+
+                    dashBtn.addEventListener('mousedown', (e) => {
+                        e.preventDefault();
+                        handleTouchStart(e, 'Shift');
+                    });
+                    dashBtn.addEventListener('mouseup', (e) => handleTouchEnd(e, 'Shift'));
+                    dashBtn.addEventListener('mouseleave', (e) => {
+                        if (dashBtn.classList.contains('pressed')) {
+                            handleTouchEnd(e, 'Shift');
+                        }
+                    });
+                }
+
+                // Update instructions for mobile
+                const instructions = document.getElementById('instructions');
+                if (instructions && isMobile) {
+                    instructions.innerHTML = '🎮 Use D-PAD to move • JUMP button to jump • DASH button for speed burst!';
+                }
+            }
+
+            // ============================================
+            // PREVENT DEFAULT MOBILE BEHAVIORS
+            // ============================================
+            function preventDefaultMobileBehaviors() {
+                // Prevent double-tap zoom
+                document.addEventListener('dblclick', (e) => {
+                    e.preventDefault();
+                }, { passive: false });
+
+                // Prevent pinch zoom
+                document.addEventListener('touchmove', (e) => {
+                    if (e.touches.length > 1) {
+                        e.preventDefault();
+                    }
+                }, { passive: false });
+
+                // Prevent context menu on long press
+                document.addEventListener('contextmenu', (e) => {
+                    if (isMobile) {
+                        e.preventDefault();
+                    }
+                });
+            }
+
+            // ============================================
+            // ADDITIONAL AUDIO CONTEXT RESUME
+            // ============================================
+            function setupAudioResume() {
+                // Resume audio on any user interaction if suspended
+                const resumeOnInteraction = () => {
+                    if (typeof resumeAudio === 'function') {
+                        resumeAudio();
+                    }
+                };
+
+                // Listen for various user interactions
+                document.addEventListener('touchstart', resumeOnInteraction, { once: false });
+                document.addEventListener('click', resumeOnInteraction, { once: false });
+                document.addEventListener('keydown', resumeOnInteraction, { once: false });
+            }
+
+            // ============================================
+            // INITIALIZATION
+            // ============================================
+            function init() {
+                console.log('=== Mobile Manager Initializing ===');
+
+                // Detect mobile device
+                detectMobile();
+
+                // Setup all mobile features
+                setupTapToPlay();
+                setupLandscapePrompt();
+                setupTouchControls();
+                preventDefaultMobileBehaviors();
+                setupAudioResume();
+
+                // For desktop testing, always show controls if needed
+                // Uncomment next line to test mobile controls on desktop:
+                // mobileControls.classList.add('active');
+
+                console.log('=== Mobile Manager Ready ===');
+            }
+
+            // Wait for DOM to be ready
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', init);
+            } else {
+                init();
+            }
+
+            // Expose for debugging
+            window.mobileManager = {
+                isMobile: () => isMobile,
+                initAudio: initAudioOnUserInteraction,
+                checkOrientation: checkOrientation
+            };
+        })();
     </script>
 </body>
 </html>
