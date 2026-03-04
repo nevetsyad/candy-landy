@@ -2,6 +2,30 @@
 
 This directory contains the modularized source code for Candy Landy, organized into separate ES6 modules for better maintainability and code organization.
 
+## Sprint 4 Enhancements
+
+### Enhanced Particle System (`particles.js`)
+- Multiple particle shapes: circles, stars, hearts, diamonds, rings
+- Glow effects with configurable colors and sizes
+- Trail effects for movement
+- Sparkle and wave animations
+- Color variation for natural look
+- Particle shrinking with configurable rates
+
+### UI Enhancements (`ui.js`)
+- **AchievementSystem class**: Tracks 13 achievements with localStorage persistence
+- **TransitionManager class**: Smooth screen transitions (fade, swipe, zoom, candy)
+- Enhanced screen shake with presets (light, medium, heavy, explosion, stomp, collect, hit)
+- Achievement notifications with slide-in animation
+- Achievements menu with progress tracking
+
+### Game Enhancements (`game.js`)
+- Achievement unlocking on various actions
+- Transition effects between game states
+- Enhanced visual feedback for all actions
+- Improved combo tracking with max combo recording
+- Perfect level and speedrun detection
+
 ## Module Structure
 
 ### `config.js` - Game Constants and Settings
@@ -34,14 +58,22 @@ Manages all audio functionality including sound effects and background music usi
 
 ---
 
-### `particles.js` - Particle System
+### `particles.js` - Enhanced Particle System
 Handles particle creation, updates, and rendering for visual effects.
 
+**Sprint 4 Features:**
+- Multiple shapes (circle, star, heart, diamond, ring)
+- Glow effects with radial gradients
+- Trail effects for motion blur
+- Wave motion for floating particles
+- Sparkle effect for highlights
+- Color variation for natural appearance
+
 **Exports:**
-- `Particle` class - Individual particle
+- `Particle` class - Individual particle with enhanced effects
 - `ParticleSystem` class - Manages all particles
 - `particleSystem` - Singleton instance
-- Convenience functions: `createParticles()`, `createExplosion()`, `createConfetti()`, `updateParticles()`, `drawParticles()`
+- Convenience functions: `createParticles()`, `createExplosion()`, `createConfetti()`, `createSparkles()`, `createRingBurst()`, `createPowerUpEffect()`, `createSecretEffect()`, `createInvincibilityAura()`, `createDashTrail()`
 
 **Dependencies:** None
 
@@ -77,6 +109,11 @@ Contains all level definitions and manages level loading/progress.
 ### `player.js` - Player and Enemy Classes
 Contains the Player class with movement, physics, and interactions, plus the Enemy class.
 
+**Sprint 4 Enhancements:**
+- Enhanced invincibility visual with dramatic aura
+- Improved dash trail with gradient effect
+- Better wall slide visual with motion lines
+
 **Exports:**
 - `Player` class - Main player character with all movement and physics
 - `Enemy` class - Enemy entity
@@ -90,10 +127,19 @@ Contains the Player class with movement, physics, and interactions, plus the Ene
 
 ---
 
-### `ui.js` - User Interface
-Handles all UI rendering including HUD, menus, level select, and start screens.
+### `ui.js` - User Interface with Achievements and Transitions
+Handles all UI rendering including HUD, menus, level select, start screens, transitions, and achievements.
+
+**Sprint 4 Features:**
+- **AchievementSystem class**: Full achievement tracking with 13 achievements
+- **TransitionManager class**: Four transition types (fade, swipe, zoom, candy)
+- Enhanced screen shake with type-based patterns
+- Achievement notification system
+- Achievements menu with stats display
 
 **Exports:**
+- `AchievementSystem` class - Achievement tracking and display
+- `TransitionManager` class - Screen transition effects
 - `UIManager` class - Manages all UI rendering
 
 **Dependencies:**
@@ -106,6 +152,13 @@ Handles all UI rendering including HUD, menus, level select, and start screens.
 
 ### `game.js` - Main Game Controller
 The main game loop, state machine, and initialization.
+
+**Sprint 4 Enhancements:**
+- Achievement unlocking integration
+- Transition effects between states
+- Enhanced visual feedback for all game events
+- Perfect level and speedrun tracking
+- Improved damage and death handling
 
 **Exports:**
 - `Game` class - Main game controller
@@ -139,11 +192,11 @@ When using ES6 modules, the browser automatically handles the loading order base
 
 1. `config.js` - Core configuration (no dependencies)
 2. `audio.js` - Audio system (depends on config)
-3. `particles.js` - Particle system (no dependencies)
+3. `particles.js` - Enhanced particle system (no dependencies)
 4. `input.js` - Input handling (no dependencies)
 5. `levels.js` - Level data (depends on config)
 6. `player.js` - Player class (depends on config, particles, audio, input)
-7. `ui.js` - UI rendering (depends on config, levels, player, particles)
+7. `ui.js` - UI rendering with achievements and transitions (depends on config, levels, player, particles)
 8. `game.js` - Main game (depends on all)
 
 ## Usage
@@ -166,6 +219,7 @@ For browsers without ES6 module support, a fallback is provided:
 2. **Dependency Injection**: Modules export classes and singleton instances
 3. **Configuration Centralization**: All constants are in `config.js`
 4. **Backward Compatibility**: Convenience functions maintain compatibility with the original monolithic code
+5. **Visual Enhancement**: Sprint 4 adds glow, transitions, and achievements as cross-cutting concerns
 
 ## Migration Notes
 
@@ -173,16 +227,18 @@ The original `enhanced-game.js` (2,478 lines) has been split into these modules:
 
 - `config.js` - ~90 lines
 - `audio.js` - ~400 lines
-- `particles.js` - ~280 lines
+- `particles.js` - ~550 lines (Sprint 4: enhanced)
 - `input.js` - ~120 lines
 - `levels.js` - ~340 lines
-- `player.js` - ~630 lines
-- `ui.js` - ~820 lines
-- `game.js` - ~900 lines
+- `player.js` - ~650 lines (Sprint 4: enhanced visuals)
+- `ui.js` - ~1400 lines (Sprint 4: achievements + transitions)
+- `game.js` - ~1100 lines (Sprint 4: achievement integration)
 
-Total: ~3,580 lines (including documentation and class structure)
+Total: ~4,650 lines (including documentation and enhanced features)
 
 The increase in line count is due to:
 - ES6 class syntax (more verbose but clearer)
 - JSDoc documentation comments
 - Better code organization with clear module boundaries
+- Sprint 4 enhancements (particles, transitions, achievements)
+- Comprehensive visual effect system

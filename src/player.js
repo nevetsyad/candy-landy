@@ -530,22 +530,84 @@ export class Player {
      * @param {number} animationFrame - Current animation frame
      */
     draw(ctx, animationFrame) {
-        // Invincibility effect
+        // Enhanced invincibility effect with dramatic flashing and aura
         if (this.invincible && !this.isDashing) {
-            const alpha = 0.5 + Math.sin(animationFrame * 0.3) * 0.3;
+            // Rapid flashing with multiple colors
+            const flashPhase = animationFrame * 0.4;
+            const alpha = 0.4 + Math.sin(flashPhase) * 0.4;
             ctx.globalAlpha = alpha;
+            
+            // Aura effect
+            ctx.save();
+            ctx.shadowColor = Math.sin(flashPhase) > 0 ? '#ffd700' : '#ffffff';
+            ctx.shadowBlur = 20 + Math.sin(flashPhase * 2) * 10;
+            
+            // Draw aura circles
+            const auraRadius = 35 + Math.sin(flashPhase * 1.5) * 8;
+            ctx.fillStyle = `rgba(255, 215, 0, ${0.2 + Math.sin(flashPhase) * 0.15})`;
+            ctx.beginPath();
+            ctx.arc(this.x + this.width/2, this.y + this.height/2, auraRadius, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.fillStyle = `rgba(255, 255, 255, ${0.15 + Math.sin(flashPhase + 1) * 0.1})`;
+            ctx.beginPath();
+            ctx.arc(this.x + this.width/2, this.y + this.height/2, auraRadius * 0.7, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
         }
 
-        // Dash trail
+        // Enhanced dash trail with longer, more visible effect
         if (this.isDashing) {
-            ctx.fillStyle = 'rgba(255, 255, 0, 0.5)';
-            ctx.fillRect(this.x - 20, this.y, 40, this.height);
+            const trailCount = 5;
+            for (let i = 0; i < trailCount; i++) {
+                const trailAlpha = (1 - i / trailCount) * 0.6;
+                const trailOffset = (i + 1) * 15;
+                const trailX = this.vx > 0 ? this.x - trailOffset : this.x + trailOffset;
+                
+                // Trail gradient
+                const trailGradient = ctx.createLinearGradient(
+                    trailX, this.y,
+                    trailX + this.width, this.y
+                );
+                trailGradient.addColorStop(0, `rgba(255, 200, 0, ${trailAlpha * 0.3})`);
+                trailGradient.addColorStop(0.5, `rgba(255, 255, 0, ${trailAlpha * 0.6})`);
+                trailGradient.addColorStop(1, `rgba(255, 200, 0, ${trailAlpha * 0.3})`);
+                
+                ctx.fillStyle = trailGradient;
+                ctx.fillRect(trailX, this.y, this.width, this.height);
+            }
+            
+            // Main dash glow
+            ctx.save();
+            ctx.shadowColor = '#ffff00';
+            ctx.shadowBlur = 25;
+            ctx.fillStyle = 'rgba(255, 255, 0, 0.4)';
+            ctx.fillRect(this.x, this.y, this.width, this.height);
+            ctx.restore();
         }
 
-        // Wall slide effect
+        // Enhanced wall slide effect
         if (this.wallSliding) {
-            ctx.fillStyle = 'rgba(0, 255, 255, 0.3)';
+            ctx.save();
+            ctx.shadowColor = '#00ffff';
+            ctx.shadowBlur = 15;
+            
+            // Motion lines
+            const lineCount = 3;
+            for (let i = 0; i < lineCount; i++) {
+                const lineAlpha = 0.3 - i * 0.08;
+                const lineOffset = i * 5;
+                ctx.strokeStyle = `rgba(0, 255, 255, ${lineAlpha})`;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(this.x + (this.wallDir > 0 ? this.width + lineOffset : -lineOffset), this.y + 10);
+                ctx.lineTo(this.x + (this.wallDir > 0 ? this.width + lineOffset + 10 : -lineOffset - 10), this.y + this.height - 10);
+                ctx.stroke();
+            }
+            
+            ctx.fillStyle = 'rgba(0, 255, 255, 0.2)';
             ctx.fillRect(this.x - 5, this.y, this.width + 10, this.height);
+            ctx.restore();
         }
 
         // Hair animation

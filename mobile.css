@@ -1,0 +1,821 @@
+/* Mobile Touch Controls and Overlays for Candy Landy */
+
+/* ============================================
+   SPRINT 2: LEVEL SELECT SCREEN STYLES
+   ============================================ */
+.level-select-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+}
+
+.level-card {
+    background: rgba(255, 255, 255, 0.95);
+    border: 4px solid #ff69b4;
+    border-radius: 15px;
+    padding: 15px;
+    margin: 10px;
+    width: 200px;
+    text-align: center;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.level-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(255, 105, 180, 0.3);
+}
+
+.level-card.locked {
+    opacity: 0.6;
+    filter: grayscale(50%);
+}
+
+.level-thumbnail {
+    font-size: 50px;
+    margin: 10px 0;
+}
+
+.level-name {
+    color: #ff1493;
+    font-family: 'Comic Sans MS', cursive;
+    font-size: 20px;
+    font-weight: bold;
+    margin: 10px 0;
+}
+
+.level-stats {
+    color: #666;
+    font-family: 'Comic Sans MS', cursive;
+    font-size: 14px;
+    margin: 5px 0;
+}
+
+/* ============================================
+   SPRINT 2: TUTORIAL HINT STYLES
+   ============================================ */
+.tutorial-hint {
+    position: absolute;
+    background: rgba(255, 255, 255, 0.95);
+    border: 3px solid #ff69b4;
+    border-radius: 15px;
+    padding: 15px 20px;
+    max-width: 400px;
+    font-family: 'Comic Sans MS', cursive;
+    font-size: 16px;
+    color: #333;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    animation: fadeInBounce 0.3s ease-out;
+    z-index: 200;
+}
+
+.tutorial-hint::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 10px solid transparent;
+    border-right: 10px solid transparent;
+    border-top: 10px solid #ff69b4;
+}
+
+@keyframes fadeInBounce {
+    0% {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    60% {
+        transform: translateY(5px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ============================================
+   SPRINT 2: SECRET COLLECTIBLE STYLES
+   ============================================ */
+.secret-collectible {
+    animation: sparkle 1.5s ease-in-out infinite;
+}
+
+@keyframes sparkle {
+    0%, 100% {
+        filter: brightness(1) drop-shadow(0 0 5px #ffd700);
+    }
+    50% {
+        filter: brightness(1.3) drop-shadow(0 0 15px #ffd700);
+    }
+}
+
+/* ============================================
+   TAP TO PLAY OVERLAY (iOS Audio Fix)
+   ============================================ */
+#tapToPlayOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fecfef 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    cursor: pointer;
+}
+
+#tapToPlayOverlay.hidden {
+    display: none;
+}
+
+#tapToPlayOverlay .tap-title {
+    font-family: 'Comic Sans MS', cursive, sans-serif;
+    font-size: 3em;
+    color: #ff1493;
+    text-shadow: 3px 3px 6px rgba(0,0,0,0.3);
+    margin-bottom: 20px;
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+#tapToPlayOverlay .tap-icon {
+    font-size: 5em;
+    animation: bounce 1s ease-in-out infinite;
+}
+
+#tapToPlayOverlay .tap-instruction {
+    font-family: 'Comic Sans MS', cursive, sans-serif;
+    font-size: 1.5em;
+    color: #8b4513;
+    margin-top: 20px;
+    background: rgba(255, 255, 255, 0.8);
+    padding: 15px 30px;
+    border-radius: 15px;
+    border: 3px solid #ff69b4;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+@keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-20px); }
+}
+
+/* ============================================
+   LANDSCAPE PROMPT OVERLAY
+   ============================================ */
+#landscapePrompt {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+    color: white;
+}
+
+#landscapePrompt.hidden {
+    display: none;
+}
+
+#landscapePrompt .rotate-icon {
+    font-size: 4em;
+    animation: rotatePhone 2s ease-in-out infinite;
+    margin-bottom: 20px;
+}
+
+#landscapePrompt .rotate-text {
+    font-family: 'Comic Sans MS', cursive, sans-serif;
+    font-size: 1.5em;
+    text-align: center;
+    padding: 0 20px;
+}
+
+@keyframes rotatePhone {
+    0% { transform: rotate(0deg); }
+    50% { transform: rotate(90deg); }
+    100% { transform: rotate(0deg); }
+}
+
+/* ============================================
+   IMPROVED MOBILE TOUCH CONTROLS
+   ============================================ */
+#mobileControls {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 15px 20px 25px 20px;
+    justify-content: space-between;
+    align-items: flex-end;
+    box-sizing: border-box;
+    z-index: 100;
+    background: linear-gradient(transparent, rgba(0,0,0,0.2));
+}
+
+#mobileControls.active {
+    display: flex;
+}
+
+/* D-Pad Container */
+.d-pad-container {
+    display: grid;
+    grid-template-columns: repeat(3, 60px);
+    grid-template-rows: repeat(3, 60px);
+    gap: 5px;
+    touch-action: none;
+}
+
+.d-pad-btn {
+    background: rgba(255, 255, 255, 0.85);
+    border: 3px solid #ff69b4;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: #ff1493;
+    cursor: pointer;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    transition: transform 0.1s, background 0.1s;
+}
+
+.d-pad-btn:active,
+.d-pad-btn.pressed {
+    background: rgba(255, 105, 180, 0.6);
+    transform: scale(0.92);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.d-pad-up { grid-column: 2; grid-row: 1; }
+.d-pad-left { grid-column: 1; grid-row: 2; }
+.d-pad-right { grid-column: 3; grid-row: 2; }
+.d-pad-down { grid-column: 2; grid-row: 3; }
+
+/* D-Pad Center (empty) */
+.d-pad-center {
+    grid-column: 2;
+    grid-row: 2;
+    background: rgba(255, 255, 255, 0.3);
+    border: 2px dashed rgba(255, 105, 180, 0.5);
+    border-radius: 12px;
+}
+
+/* Action Buttons Container */
+.action-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: center;
+}
+
+/* Action Button Base */
+.action-btn {
+    width: 75px;
+    height: 75px;
+    background: rgba(255, 255, 255, 0.9);
+    border: 4px solid #ff69b4;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    color: #ff1493;
+    cursor: pointer;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    box-shadow: 0 5px 10px rgba(0,0,0,0.3);
+    transition: transform 0.1s, background 0.1s;
+}
+
+.action-btn:active,
+.action-btn.pressed {
+    background: rgba(255, 105, 180, 0.6);
+    transform: scale(0.92);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+}
+
+/* Jump Button - Larger and Primary */
+#jumpBtn {
+    width: 85px;
+    height: 85px;
+    font-size: 32px;
+    background: rgba(255, 255, 255, 0.95);
+    border-color: #00ff00;
+    color: #00aa00;
+}
+
+#jumpBtn:active,
+#jumpBtn.pressed {
+    background: rgba(0, 255, 0, 0.4);
+}
+
+/* Dash Button */
+#dashBtn {
+    width: 65px;
+    height: 65px;
+    font-size: 24px;
+    background: rgba(255, 255, 255, 0.85);
+    border-color: #ffd700;
+    color: #ff8800;
+}
+
+#dashBtn:active,
+#dashBtn.pressed {
+    background: rgba(255, 215, 0, 0.4);
+}
+
+/* Button Labels */
+.btn-label {
+    font-family: 'Comic Sans MS', cursive, sans-serif;
+    font-size: 10px;
+    position: absolute;
+    bottom: -18px;
+    left: 50%;
+    transform: translateX(-50%);
+    white-space: nowrap;
+    color: #fff;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+}
+
+.action-btn {
+    position: relative;
+}
+
+/* Responsive adjustments for smaller screens */
+@media (max-width: 480px) {
+    .d-pad-container {
+        grid-template-columns: repeat(3, 50px);
+        grid-template-rows: repeat(3, 50px);
+        gap: 4px;
+    }
+
+    .d-pad-btn {
+        font-size: 20px;
+    }
+
+    .action-btn {
+        width: 65px;
+        height: 65px;
+        font-size: 24px;
+    }
+
+    #jumpBtn {
+        width: 75px;
+        height: 75px;
+        font-size: 28px;
+    }
+
+    #dashBtn {
+        width: 55px;
+        height: 55px;
+        font-size: 20px;
+    }
+
+    #mobileControls {
+        padding: 10px 15px 20px 15px;
+    }
+}
+
+/* Extra small screens */
+@media (max-width: 360px) {
+    .d-pad-container {
+        grid-template-columns: repeat(3, 45px);
+        grid-template-rows: repeat(3, 45px);
+        gap: 3px;
+    }
+
+    .d-pad-btn {
+        font-size: 18px;
+        border-width: 2px;
+    }
+
+    .action-btn {
+        width: 55px;
+        height: 55px;
+        font-size: 20px;
+        border-width: 3px;
+    }
+
+    #jumpBtn {
+        width: 65px;
+        height: 65px;
+        font-size: 24px;
+    }
+
+    #dashBtn {
+        width: 50px;
+        height: 50px;
+        font-size: 18px;
+    }
+}
+
+/* Landscape mode optimization */
+@media (orientation: landscape) and (max-height: 500px) {
+    #mobileControls {
+        padding: 5px 15px 10px 15px;
+    }
+
+    .d-pad-container {
+        grid-template-columns: repeat(3, 45px);
+        grid-template-rows: repeat(3, 45px);
+        gap: 3px;
+    }
+
+    .action-btn {
+        width: 55px;
+        height: 55px;
+        font-size: 22px;
+    }
+
+    #jumpBtn {
+        width: 65px;
+        height: 65px;
+        font-size: 26px;
+    }
+
+    #dashBtn {
+        width: 50px;
+        height: 50px;
+        font-size: 18px;
+    }
+}
+
+/* Touch feedback ripple effect */
+.touch-ripple {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255, 105, 180, 0.4);
+    transform: scale(0);
+    animation: ripple 0.4s ease-out;
+    pointer-events: none;
+}
+
+@keyframes ripple {
+    to {
+        transform: scale(2);
+        opacity: 0;
+    }
+}
+
+/* Visual feedback for active buttons */
+.d-pad-btn.active,
+.action-btn.active {
+    box-shadow: 0 0 15px rgba(255, 105, 180, 0.8), inset 0 0 10px rgba(255, 255, 255, 0.3);
+}
+
+/* ============================================
+   SPRINT 4: SCREEN TRANSITIONS
+   ============================================ */
+.transition-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 2000;
+    pointer-events: none;
+}
+
+.transition-fade {
+    background: linear-gradient(135deg, 
+        rgba(255, 105, 180, 0.9) 0%, 
+        rgba(255, 182, 193, 0.9) 50%, 
+        rgba(255, 105, 180, 0.9) 100%);
+}
+
+.transition-candy {
+    background: linear-gradient(180deg,
+        rgba(255, 105, 180, 0.95) 0%,
+        rgba(255, 182, 193, 0.95) 100%);
+    overflow: hidden;
+}
+
+.candy-particle {
+    position: absolute;
+    animation: candyFall linear forwards;
+}
+
+@keyframes candyFall {
+    0% {
+        transform: translateY(-100px) rotate(0deg);
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(100vh) rotate(720deg);
+        opacity: 0.5;
+    }
+}
+
+/* ============================================
+   SPRINT 4: ACHIEVEMENT NOTIFICATIONS
+   ============================================ */
+.achievement-notification {
+    position: fixed;
+    top: 20px;
+    right: -350px;
+    width: 320px;
+    padding: 15px 20px;
+    background: linear-gradient(135deg, #ffd700 0%, #ffec8b 100%);
+    border: 4px solid #ff69b4;
+    border-radius: 15px;
+    box-shadow: 0 5px 20px rgba(255, 105, 180, 0.4);
+    z-index: 1500;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    animation: slideInAchievement 0.5s ease-out forwards;
+    font-family: 'Comic Sans MS', cursive, sans-serif;
+}
+
+.achievement-notification.slide-out {
+    animation: slideOutAchievement 0.5s ease-in forwards;
+}
+
+@keyframes slideInAchievement {
+    0% {
+        right: -350px;
+        opacity: 0;
+    }
+    100% {
+        right: 20px;
+        opacity: 1;
+    }
+}
+
+@keyframes slideOutAchievement {
+    0% {
+        right: 20px;
+        opacity: 1;
+    }
+    100% {
+        right: -350px;
+        opacity: 0;
+    }
+}
+
+.achievement-icon {
+    font-size: 40px;
+    animation: achievementPulse 1s ease-in-out infinite;
+}
+
+@keyframes achievementPulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+}
+
+.achievement-content {
+    flex: 1;
+}
+
+.achievement-title {
+    font-size: 12px;
+    color: #8b4513;
+    font-weight: bold;
+    margin-bottom: 3px;
+}
+
+.achievement-name {
+    font-size: 16px;
+    color: #ff1493;
+    font-weight: bold;
+    margin-bottom: 2px;
+}
+
+.achievement-desc {
+    font-size: 11px;
+    color: #666;
+}
+
+/* ============================================
+   SPRINT 4: ACHIEVEMENTS MENU
+   ============================================ */
+.achievements-menu {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    z-index: 3000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.achievements-title {
+    font-family: 'Comic Sans MS', cursive, sans-serif;
+    font-size: 2em;
+    color: #ffd700;
+    text-shadow: 2px 2px 4px rgba(255, 105, 180, 0.8);
+    margin-bottom: 20px;
+}
+
+.achievements-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 15px;
+    width: 100%;
+    max-width: 800px;
+    padding: 0 10px;
+}
+
+.achievement-card {
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid #666;
+    border-radius: 10px;
+    padding: 15px;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.achievement-card.unlocked {
+    background: rgba(255, 215, 0, 0.2);
+    border-color: #ffd700;
+}
+
+.achievement-card-icon {
+    font-size: 30px;
+    opacity: 0.4;
+}
+
+.achievement-card.unlocked .achievement-card-icon {
+    opacity: 1;
+}
+
+.achievement-card-info {
+    flex: 1;
+}
+
+.achievement-card-name {
+    font-family: 'Comic Sans MS', cursive, sans-serif;
+    font-size: 14px;
+    color: #fff;
+    font-weight: bold;
+    margin-bottom: 3px;
+}
+
+.achievement-card-desc {
+    font-family: 'Comic Sans MS', cursive, sans-serif;
+    font-size: 11px;
+    color: #aaa;
+    margin-bottom: 5px;
+}
+
+.achievement-card-status {
+    font-family: 'Comic Sans MS', cursive, sans-serif;
+    font-size: 11px;
+}
+
+.achievement-card.unlocked .achievement-card-status {
+    color: #00ff00;
+}
+
+.achievement-card:not(.unlocked) .achievement-card-status {
+    color: #888;
+}
+
+/* ============================================
+   SPRINT 4: ENHANCED GLOW EFFECTS
+   ============================================ */
+.glow-effect {
+    animation: glowPulse 2s ease-in-out infinite;
+}
+
+@keyframes glowPulse {
+    0%, 100% {
+        filter: drop-shadow(0 0 5px currentColor);
+    }
+    50% {
+        filter: drop-shadow(0 0 15px currentColor);
+    }
+}
+
+.glow-powerup {
+    animation: powerUpGlow 1s ease-in-out infinite;
+}
+
+@keyframes powerUpGlow {
+    0%, 100% {
+        filter: drop-shadow(0 0 8px currentColor) brightness(1);
+    }
+    50% {
+        filter: drop-shadow(0 0 20px currentColor) brightness(1.2);
+    }
+}
+
+.glow-secret {
+    animation: secretGlow 1.5s ease-in-out infinite;
+}
+
+@keyframes secretGlow {
+    0%, 100% {
+        filter: drop-shadow(0 0 10px #9370db) brightness(1);
+    }
+    50% {
+        filter: drop-shadow(0 0 25px #9370db) brightness(1.3);
+    }
+}
+
+/* ============================================
+   SPRINT 4: ENHANCED SCREEN SHAKE
+   ============================================ */
+@keyframes shakeLight {
+    0%, 100% { transform: translate(0, 0); }
+    25% { transform: translate(-2px, 1px); }
+    50% { transform: translate(2px, -1px); }
+    75% { transform: translate(-1px, 2px); }
+}
+
+@keyframes shakeMedium {
+    0%, 100% { transform: translate(0, 0); }
+    10% { transform: translate(-5px, -3px); }
+    20% { transform: translate(5px, 3px); }
+    30% { transform: translate(-4px, 4px); }
+    40% { transform: translate(4px, -4px); }
+    50% { transform: translate(-3px, 3px); }
+    60% { transform: translate(3px, -3px); }
+    70% { transform: translate(-2px, 2px); }
+    80% { transform: translate(2px, -2px); }
+    90% { transform: translate(-1px, 1px); }
+}
+
+@keyframes shakeHeavy {
+    0%, 100% { transform: translate(0, 0); }
+    10% { transform: translate(-10px, -5px); }
+    20% { transform: translate(10px, 5px); }
+    30% { transform: translate(-8px, 8px); }
+    40% { transform: translate(8px, -8px); }
+    50% { transform: translate(-6px, 6px); }
+    60% { transform: translate(6px, -6px); }
+    70% { transform: translate(-4px, 4px); }
+    80% { transform: translate(4px, -4px); }
+    90% { transform: translate(-2px, 2px); }
+}
+
+.shake-light { animation: shakeLight 0.1s ease-in-out; }
+.shake-medium { animation: shakeMedium 0.2s ease-in-out; }
+.shake-heavy { animation: shakeHeavy 0.3s ease-in-out; }
+
+/* ============================================
+   RESPONSIVE ADJUSTMENTS FOR SPRINT 4
+   ============================================ */
+@media (max-width: 480px) {
+    .achievement-notification {
+        width: calc(100% - 40px);
+        right: -100%;
+        padding: 10px 15px;
+    }
+    
+    @keyframes slideInAchievement {
+        0% {
+            right: -100%;
+            opacity: 0;
+        }
+        100% {
+            right: 20px;
+            opacity: 1;
+        }
+    }
+    
+    .achievement-icon {
+        font-size: 30px;
+    }
+    
+    .achievement-name {
+        font-size: 14px;
+    }
+    
+    .achievements-title {
+        font-size: 1.5em;
+    }
+    
+    .achievements-grid {
+        grid-template-columns: 1fr;
+    }
+}
