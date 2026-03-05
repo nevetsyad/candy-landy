@@ -90,6 +90,16 @@
         <div class="rotate-icon">📱↻</div>
         <div class="rotate-text">Please rotate your device to landscape mode for the best experience!</div>
     </div>
+    
+    <!-- Achievement Notification (dynamically created by JS) -->
+    <div id="achievementNotification" class="achievement-notification hidden">
+        <div class="achievement-icon">🏆</div>
+        <div class="achievement-content">
+            <div class="achievement-title">Achievement Unlocked!</div>
+            <div class="achievement-name">Achievement Name</div>
+            <div class="achievement-desc">Achievement description</div>
+        </div>
+    </div>
 
     <div id="gameContainer">
         <div id="gameTitle">🍬 Candy Landy 🍬</div>
@@ -126,7 +136,11 @@
         </div>
     </div>
 
-    <script src="enhanced-game.js"></script>
+    <!-- ES6 Module Entry Point -->
+    <script type="module" src="src/game.js"></script>
+    
+    <!-- Fallback for browsers without ES6 module support -->
+    <script nomodule src="enhanced-game.js"></script>
     <script>
         // ============================================
         // MOBILE MANAGER - Handles all mobile-specific functionality

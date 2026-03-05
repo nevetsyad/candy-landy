@@ -1,6 +1,30 @@
 # 🍬 Candy Landy - Enhanced Edition v5 🍬
 
-A polished candy-themed platformer game with advanced features including multiple levels, power-ups, enemies, combo systems, checkpoints, dash mechanics, wall jumps, and more!
+A polished candy-themed platformer game with advanced features including multiple levels, power-ups, enemies, combo systems, checkpoints, dash mechanics, wall jumps, achievements, screen transitions, and more!
+
+## 📁 Project Structure
+
+The codebase is organized into modular ES6 classes for better maintainability:
+
+```
+candy-landy/
+├── index.html          # Main HTML file with mobile support
+├── mobile.css          # Mobile-specific styles
+├── enhanced-game.js    # Legacy monolithic file (fallback)
+├── src/                # Modular source code
+│   ├── config.js       # Game constants and settings
+│   ├── audio.js        # Sound system (Web Audio API)
+│   ├── particles.js    # Enhanced particle system with glow effects
+│   ├── input.js        # Keyboard and touch input handling
+│   ├── levels.js       # Level data and management
+│   ├── player.js       # Player and Enemy classes
+│   ├── ui.js           # HUD, menus, screens, transitions, achievements
+│   ├── game.js         # Main game loop and controller
+│   └── README.md       # Module documentation
+└── README.md           # This file
+```
+
+See [src/README.md](src/README.md) for detailed module documentation.
 
 ## 🎮 Features
 
@@ -9,108 +33,129 @@ A polished candy-themed platformer game with advanced features including multipl
 - **Multiple Platform Types**:
   - Normal platforms (stable)
   - Moving platforms (↔) - move back and forth
-  - Disappearing platforms (⏳) - fade in and out
+  - Disappearing platforms (⏳) - fade in and out with warning glow
 - **Combo System** - Collect candies quickly for score multipliers (up to 5x!)
 - **Time Bonuses** - Complete levels quickly for extra points
 - **High Score Tracking** - Your best scores are saved locally
+
+### 🏆 Achievement System (NEW!)
+Track your progress with 13 achievements:
+- **First Hop** - Jump for the first time
+- **Stomper** - Defeat an enemy by stomping
+- **Sky High** - Perform a double jump
+- **Speedster** - Use the dash ability
+- **Ground Pounder** - Perform a ground pound
+- **Perfect Run** - Complete a level without taking damage
+- **Treasure Hunter** - Find all secrets in a level
+- **Combo Master** - Reach a 5x combo
+- **Combo Legend** - Reach a 10x combo
+- **Speed Runner** - Complete a level in under 30 seconds
+- **Untouchable** - Complete all levels without dying
+- **Candy Collector** - Collect 100 candies total
+- **Champion** - Complete the entire game
+
+Achievements are saved to localStorage and displayed in a dedicated menu (Press **A**).
 
 ### Power-Ups
 - **⚡ Speed Boost** - Move 60% faster for 10 seconds
 - **★ Invincibility** - Defeat enemies on contact for 5 seconds
 - **↑↑ Triple Jump** - Jump three times in the air for 7.5 seconds
-- **💨 Dash** - Perform a powerful dash (SHIFT key) - invincible and double speed for 0.17 seconds, 1 second cooldown
+- **💨 Dash** - Perform a powerful dash (SHIFT key) - invincible and double speed
 
-### NEW v5 Features
-- **🚩 Checkpoint System** - Collect checkpoint flags to heal and set respawn points
-- **⏱️ Visible Timer** - Level timer with color changes (green → yellow → red) as time runs low
-- **🚶 Wall Jump** - Slide down walls and jump off them for new traversal options
-- **💨 Dash Mechanic** - Quick dash with invincibility and visual trail effect
-- **🗺️ Mini-Map** - Bottom-right corner shows platforms, checkpoints, goal, and player position
-- **✨ Enhanced Visual Effects** - Invincibility transparency pulsing, improved screen shake intensities
-- **🐛 Critical Bug Fixes** - Combo multiplier fixed, double jump state tracking improved, particle system optimized
+### Screen Transitions (NEW!)
+- **Candy Fall Transition** - Beautiful falling candy animation between screens
+- **Fade Transition** - Smooth fade with pink gradient for pause/resume
+- **Swipe Transition** - Dynamic swipe effect for level starts
+- **Zoom Transition** - Exciting zoom effect for game over
+- All transitions are candy-themed with sparkle effects
 
 ### Enemies
 - Red blob enemies that patrol platforms
 - **Jump on enemies from above** to stomp and defeat them! (Mario-style)
 - Avoid hitting enemies from the side or bottom, or use invincibility
 - Stomping enemies awards 50 points and triggers combo system
-- Defeating enemies creates explosion and star particle effects
+- Defeating enemies creates enhanced explosion and star particle effects
 
-### Checkpoints (NEW!)
+### Checkpoints
 - Green flag markers scattered throughout each level
 - Touching a checkpoint heals you to full health
 - Sets your respawn point - if you die or fall, you'll respawn at the last checkpoint
-- Collected checkpoints remain collected for the rest of the level
-- Checkpoints show progress in the HUD: 🚩 Checkpoints: 2/3
+- Collected checkpoints show enhanced glow effects
 
-### Level Timers (NEW!)
-- Each level has a time limit (Level 1: 2 min, Level 2: 3 min, Level 3: 4 min)
-- Timer displays in HUD with color changes:
-  - Green (>50% time remaining)
-  - Yellow (25-50% time remaining)
-  - Red (<25% time remaining - hurry up!)
-- Complete levels quickly for better time bonuses
+### Secret Collectibles (NEW!)
+- Hidden purple diamonds scattered throughout levels
+- Worth 500 points each!
+- Feature enhanced sparkle and glow effects
+- Track secrets found per level in the level select screen
 
-### Visual Effects
-- **Particle Systems** for candy collection, jumps, and landings
-- **Screen Shake** with different intensities for various actions
+### Visual Effects (Enhanced!)
+- **Enhanced Particle System** with multiple shapes (stars, hearts, diamonds, rings)
+- **Glow Effects** on power-ups, secrets, and special collectibles
+- **Screen Shake** with different intensities (light, medium, heavy, explosion, stomp, collect, hit)
 - **Animated Character** with pigtails, dress, and running animations
-- **Background Animations** with floating clouds and candies
-- **Glowing Effects** on candies and power-ups
-- **Smooth Game State Transitions** with polished UI
-- **Invincibility Transparency Pulsing** - Character fades in and out when invincible
-- **Dash Trail Effect** - Yellow trail follows character during dash
-- **Wall Slide Glow** - Cyan glow when sliding on walls
+- **Background Animations** with floating clouds
+- **Smooth Game State Transitions** with candy-themed overlays
+- **Enhanced Invincibility Visual** - Dramatic flashing with golden aura
+- **Improved Dash Trail** - Longer, more visible trail with gradient
 - **Mini-Map** - Bottom-right corner shows all level elements
 
 ### Sound System
 - **Web Audio API** for crisp, generated sound effects
 - **Jump, collect, power-up, hurt, victory, and game over sounds**
-- **Volume Controls** - Adjust from 0-100%
+- **Volume Controls** - Adjust from 0-100% (keys 0-5)
 
 ### Game States
-- **Start Screen** with instructions and high score display
-- **Pause Functionality** (ESC key)
-- **Level Complete Screens** with time bonuses
-- **Game Complete Screen** with final score and high score tracking
-- **Game Over Screen** with retry option
+- **Start Screen** with instructions, high score, and achievement count
+- **Level Select Screen** with level cards showing best scores and secrets
+- **Pause Functionality** (ESC key) with volume adjustment
+- **Achievements Menu** (A key) with progress tracking
+- **Level Complete** with time bonuses and transition to next level
+- **Game Complete** with celebration effects
+- **Game Over** with retry option
 
 ## 🎯 Controls
 
-### Movement
-- **← → Arrow Keys** - Move left/right
-- **SPACE / ↑ Arrow** - Jump (supports double jump!)
-- **SHIFT** - Dash (grounded only, 1 second cooldown) - Invincible and double speed!
-- **ESC** - Pause/Resume game
+### Keyboard Controls
+| Key | Action |
+|-----|--------|
+| **← →** | Move left/right |
+| **SPACE / ↑** | Jump (double tap for double jump!) |
+| **SHIFT** | Dash (grounded only, 1 second cooldown) |
+| **ESC** | Pause/Resume game |
+| **A** | Open Achievements menu |
+| **R** | Restart (on game over/victory) |
+| **0-5** | Volume control (0=mute, 5=max) |
+| **1-3** | Select level (on level select screen) |
 
-### NEW: Wall Jump
+### Mobile Controls
+- **D-Pad** - Directional movement on left side
+- **Jump Button** - Large green button on right
+- **Dash Button** - Yellow button below jump
+- **Tap to Play** - Initial tap required for audio on iOS
+
+### Wall Jump
 - **Jump near wall** - Slide down slowly
-- **Jump again** - Launch off wall in opposite direction (great for climbing!)
+- **Jump again** - Launch off wall in opposite direction
 
-### Sound Controls
-- **0** - Mute
-- **1** - 20% volume
-- **2** - 40% volume
-- **3** - 60% volume
-- **4** - 80% volume
-- **5** - 100% volume
-
-### Game Navigation
-- **SPACE / ENTER** - Start game, continue to next level, or retry
+### Ground Pound
+- **DOWN + JUMP** (while airborne) - Powerful downward attack
+- Creates shockwave that damages nearby enemies
+- Bounces you up after impact
 
 ## 📊 Scoring
 
 ### Points
-- **Candy Collection**: 10 points (base)
+- **Candy Collection**: 10 points (base) × combo multiplier
 - **Combo Multiplier**: Up to 5x for rapid collection
-- **Time Bonus**: Up to 300 points per level (based on completion time)
-- **Enemy Stomp**: 50 points each (jump on enemies from above!)
+- **Time Bonus**: Up to 300 points per level
+- **Enemy Stomp**: 50 points each
+- **Secret Collectible**: 500 points each
 - **Power-Up Collection**: 25 points each
 
 ### High Scores
-- Top 10 scores are saved to local storage
-- Includes score, level reached, and date
-- New high scores are celebrated on the victory screen!
+- Scores saved to local storage
+- Best score displayed per level
+- Total high score shown on level select
 
 ## 🎨 Power-Up Guide
 
@@ -118,53 +163,39 @@ A polished candy-themed platformer game with advanced features including multipl
 - **Effect**: 60% faster movement
 - **Duration**: 10 seconds
 - **Visual**: Golden glow around character
-- **Strategy**: Use for quick platform crossing or collecting distant candies
+- **Strategy**: Use for quick platform crossing
 
 ### ★ Invincibility
 - **Effect**: Defeat enemies on contact, temporary invulnerability
 - **Duration**: 5 seconds
-- **Visual**: Character turns gold and flashes
+- **Visual**: Character turns gold and flashes with aura
 - **Strategy**: Use to clear enemy-infested areas
 
 ### ↑↑ Triple Jump
 - **Effect**: Jump three times before touching ground
 - **Duration**: 7.5 seconds
 - **Visual**: Blue glow around character
-- **Strategy**: Essential for reaching high platforms and skipping difficult sections
+- **Strategy**: Essential for reaching high platforms
 
-### 💨 Dash (NEW!)
+### 💨 Dash
 - **Effect**: Quick invincible dash with double speed
 - **Activation**: Press SHIFT while grounded
-- **Duration**: 10 frames (0.17 seconds dash, 1 second cooldown)
+- **Duration**: 0.17 seconds dash, 1 second cooldown
 - **Visual**: Yellow trail behind character
-- **Strategy**: Use to quickly cross dangerous areas or escape enemies
-
-## 🧗 Wall Jump Guide (NEW!)
-
-### How to Wall Jump
-1. **Approach a wall** while in the air
-2. **Character will slide down slowly** on the wall (cyan glow effect)
-3. **Press jump while sliding** to launch off in opposite direction
-4. **Gain vertical and horizontal momentum** to reach high places
-
-### Tips
-- Use wall jumps to climb narrow shafts
-- Chain wall jumps on alternating walls
-- Wall jumps can help you reach secret areas
-- You can wall jump on any solid platform edge
+- **Strategy**: Use to quickly cross dangerous areas
 
 ## 🏆 Tips for High Scores
 
-1. **Build Combos** - Collect candies quickly (within 1.5 seconds) for multipliers
-2. **Stomp Enemies** - Jump on enemies from above for 50 points each! Perfect for building combos
-3. **Watch the Clock** - Complete levels quickly for time bonuses (timer shows urgency!)
-4. **Collect Everything** - Don't miss candies or power-ups
-5. **Defeat Enemies** - Use stomp jumps or invincibility to defeat enemies for bonus points
-6. **Plan Your Route** - Memorize platform patterns and disappearing timings
-7. **Use Power-Ups Wisely** - Save invincibility for enemy-dense areas
-8. **Collect Checkpoints** - They heal you and provide safety nets
-9. **Use Wall Jumps** - Master wall jumping to reach high platforms and bypass enemies
-10. **Dash Strategically** - Use dash to quickly cross gaps or dodge enemies
+1. **Build Combos** - Collect candies quickly for multipliers
+2. **Stomp Enemies** - Jump on enemies from above for 50 points each
+3. **Watch the Clock** - Complete levels quickly for time bonuses
+4. **Find Secrets** - Purple diamonds are worth 500 points!
+5. **Go for Perfect Runs** - No damage = achievement unlock
+6. **Use Checkpoints** - They heal you and provide safety nets
+7. **Master Wall Jumps** - Reach high platforms and secret areas
+8. **Dash Strategically** - Cross gaps and dodge enemies quickly
+9. **Ground Pound Groups** - Damage multiple enemies at once
+10. **Track Achievements** - Press A to see your progress
 
 ## 🌟 Level Guide
 
@@ -179,17 +210,15 @@ A polished candy-themed platformer game with advanced features including multipl
 - Introduces moving and disappearing platforms
 - Two checkpoints
 - Dash power-up available
-- First enemies appear
 - Time limit: 3 minutes
 - Requires timing and precision
 
 ### Level 3: Challenge Mode
 - All platform types including disappearing
 - Three checkpoints
-- All power-up types available (including dash!)
+- All power-up types available
 - Multiple enemies in tight spaces
 - Time limit: 4 minutes
-- Complex platform layouts requiring wall jumps
 - Requires mastery of all mechanics
 
 ## 🔧 Technical Features
@@ -199,68 +228,114 @@ A polished candy-themed platformer game with advanced features including multipl
 - Smooth collision detection
 - Platform edge handling
 - Knockback on damage
-- **Wall sliding physics** - Slow fall when near walls
-- **Wall jump mechanics** - Launch off walls with directional momentum
-- **Dash mechanics** - Brief invincibility with double speed
+- Wall sliding physics
+- Wall jump mechanics
+- Dash mechanics with invincibility
+
+### Enhanced Visual System
+- Multi-shape particle system (circles, stars, hearts, diamonds, rings)
+- Glow effects with configurable intensity
+- Trail effects with gradients
+- Screen shake with type-based patterns
+- Smooth 60fps animations
 
 ### Audio
 - Web Audio API implementation
-- Procedurally generated sounds (no external files needed)
+- Procedurally generated sounds
 - Master and SFX volume controls
-- **NEW sounds**: Dash, Wall Jump, Checkpoint
+- Sounds for all actions and events
 
 ### Storage
 - localStorage for high scores
+- localStorage for achievements
+- localStorage for level progress
 - No external dependencies required
 
 ### Performance
-- Optimized particle systems with size limits (max 100 per explosion, 300 total)
+- Optimized particle systems (max 500 particles)
 - Efficient rendering loop
-- requestAnimationFrame for smooth 60fps gameplay
-
-### v5 Bug Fixes
-- **Fixed combo multiplier** - Now correctly multiplies points (was capping at 5x total)
-- **Double jump state tracking** - Explicit state variables prevent bugs
-- **Edge case validation** - Enemy spawn positions and disappearing platforms validated
-- **Particle system optimization** - Capped to prevent performance issues
+- requestAnimationFrame for smooth gameplay
+- Validated inputs to prevent errors
 
 ## 🚀 How to Play
 
 1. Open `index.html` in a modern web browser
-2. Click anywhere to initialize audio (required by browsers)
-3. Press SPACE or ENTER to start
-4. Use arrow keys to move, SPACE to jump (double tap for double jump!)
-5. Collect candies, stomp enemies by jumping on them from above, reach the flag!
-6. Complete all 3 levels for the ultimate victory!
+2. Click/tap anywhere to initialize audio (required by browsers)
+3. Press SPACE, ENTER, or UP ARROW to start
+4. Use arrow keys to move, SPACE to jump
+5. Collect candies, stomp enemies, find secrets!
+6. Complete all 3 levels for victory!
+7. Press A anytime to check achievements!
 
 ## 📱 Browser Compatibility
 
 Works in all modern browsers that support:
 - HTML5 Canvas
 - Web Audio API
-- ES6 JavaScript
+- ES6 JavaScript modules
 - localStorage
 
 Tested on:
 - Chrome/Edge 90+
 - Firefox 88+
 - Safari 14+
+- Mobile browsers (iOS Safari, Chrome Android)
 
 ## 🎨 Customization
 
 ### Adjusting Difficulty
-Edit these constants in `enhanced-game.js`:
+Edit `src/config.js`:
 ```javascript
-const GRAVITY = 0.6;           // Gravity strength
-const JUMP_STRENGTH = -14;    // Jump power
-const MOVE_SPEED = 5;         // Movement speed
+export const PHYSICS = {
+    GRAVITY: 0.8,           // Gravity strength
+    PLAYER_SPEED: 5,        // Movement speed
+    JUMP_POWER: -16,        // Jump power
+};
 ```
 
 ### Adding New Levels
-Extend the `loadLevel()` method in the `Level` class with additional level designs.
+Add to `levelData` array in `src/levels.js`:
+```javascript
+{
+    name: "Level Name",
+    description: "Description",
+    thumbnail: "🎮",
+    platforms: [...],
+    candies: [...],
+    secrets: [...],
+    enemies: [...],
+}
+```
 
-### Modifying Power-Ups
-Adjust power-up durations and effects in the `collectPowerUp()` section of the update loop.
+### Adding New Achievements
+Edit the `achievements` object in `src/ui.js`:
+```javascript
+newAchievement: { 
+    id: 'newAchievement', 
+    name: 'Name', 
+    desc: 'Description', 
+    icon: '🏆',
+    unlocked: false 
+}
+```
+
+## 📝 Version History
+
+### v5 - Enhanced Edition
+- **Sprint 1**: Mobile touch controls, iOS audio fix, landscape prompt, checkpoint invincibility
+- **Sprint 2**: Level select, tutorial hints, ground pound attack, secret collectibles
+- **Sprint 3**: Modular code structure (ES6 modules)
+- **Sprint 4**: Screen transitions, achievement system, enhanced visuals
+  - Smooth fade, swipe, zoom, and candy fall transitions
+  - 13-track achievement system with notifications
+  - Enhanced particle effects with glow
+  - Improved screen shake with presets
+  - Better invincibility and dash visuals
+- **Sprint 5**: Testing, documentation, and final polish
+  - Comprehensive testing of all features
+  - Complete documentation (README, CONTRIBUTING, TESTING, CHANGELOG)
+  - Bug fixes and performance optimization
+  - Final release preparation
 
 ## 📝 Credits
 
@@ -270,3 +345,5 @@ No external libraries or assets required!
 ## 🎮 Have Fun!
 
 Enjoy the enhanced Candy Landy experience! 🍬🎉
+
+*Collect all achievements to become the ultimate Candy Landy Champion!*

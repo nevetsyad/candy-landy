@@ -1,7 +1,32 @@
 // Enhanced Candy Landy Game - Multiple Levels, Sound Effects, Power-ups, Enemies
 // Version 5 - Critical Fixes + Checkpoints + Timer + Dash + Wall Jump + Mini-map
+// SPRINT 2 - Level Select + Tutorial Hints + Ground Pound + Secret Collectibles
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
+
+// SPRINT 2: Add roundRect polyfill for older browsers
+if (!CanvasRenderingContext2D.prototype.roundRect) {
+    CanvasRenderingContext2D.prototype.roundRect = function(x, y, width, height, radius) {
+        if (typeof radius === 'undefined') radius = 5;
+        if (typeof radius === 'number') {
+            radius = {tl: radius, tr: radius, br: radius, bl: radius};
+        } else {
+            radius = {...{tl: 0, tr: 0, br: 0, bl: 0}, ...radius};
+        }
+        this.beginPath();
+        this.moveTo(x + radius.tl, y);
+        this.lineTo(x + width - radius.tr, y);
+        this.quadraticCurveTo(x + width, y, x + width, y + radius.tr);
+        this.lineTo(x + width, y + height - radius.br);
+        this.quadraticCurveTo(x + width, y + height, x + width - radius.br, y + height);
+        this.lineTo(x + radius.bl, y + height);
+        this.quadraticCurveTo(x, y + height, x, y + height - radius.bl);
+        this.lineTo(x, y + radius.tl);
+        this.quadraticCurveTo(x, y, x + radius.tl, y);
+        this.closePath();
+        return this;
+    };
+}
 
 // Mobile detection and responsive canvas
 const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
@@ -12,20 +37,174 @@ canvas.width = 800;
 canvas.height = 600;
 
 // Game state
-let gameState = 'start';
+let gameState = 'start'; // 'start', 'levelSelect', 'playing', 'paused', 'gameover', 'victory'
 let score = 0;
 let highScore = 0;
 let currentLevel = 0;
 let animationFrame = 0;
 
-// PHASE 2: Level transition system
-let transitionState = null; // 'loading', 'fadingOut', 'fadingIn', 'panning', 'none'
-let transitionProgress = 0;
-let transitionTargetCameraX = 0;
-let transitionTargetCameraY = 0;
-let transitionDuration = 60; // frames (1 second at 60fps)
-let loadingTimer = 0;
-let loadingCountdown = 3; // seconds
+// SPRINT 2: Level Select System
+let levelProgress = {
+    unlocked: [true, false, false], // Level 1 unlocked by default
+    bestScores: [0, 0, 0],
+    secretsFound: [0, 0, 0],
+    totalSecrets: [2, 2, 2] // 2 secrets per level
+};
+
+// Load level progress from localStorage
+function loadLevelProgress() {
+    try {
+        const saved = localStorage.getItem('candyLandyProgress');
+        if (saved) {
+            const parsed = JSON.parse(saved);
+            levelProgress = { ...levelProgress, ...parsed };
+        }
+    } catch (e) {
+        console.warn('Could not load level progress:', e.message);
+    }
+}
+
+// Save level progress to localStorage
+function saveLevelProgress() {
+    try {
+        localStorage.setItem('candyLandyProgress', JSON.stringify(levelProgress));
+    } catch (e) {
+        console.warn('Could not save level progress:', e.message);
+    }
+}
+
+// SPRINT 2: Tutorial System
+let tutorialHints = {
+    jump: { shown: false, text: "Press SPACE or UP to jump!", trigger: 'firstGrounded' },
+    doubleJump: { shown: false, text: "Press jump again in the air for DOUBLE JUMP!", trigger: 'firstAirJump' },
+    stomp: { shown: false, text: "Jump on enemies from above to defeat them!", trigger: 'firstEnemyNearby' },
+    checkpoint: { shown: false, text: "Collect checkpoints to heal and respawn there!", trigger: 'firstCheckpointNearby' },
+    dash: { shown: false, text: "Press SHIFT while grounded to DASH (invincible)!", trigger: 'firstDashAvailable' },
+    groundPound: { shown: false, text: "Press DOWN + JUMP in the air for GROUND POUND!", trigger: 'firstAirborne' }
+};
+
+let activeHint = null;
+let hintTimer = 0;
+const HINT_DURATION = 300; // 5 seconds at 60fps
+
+// Load tutorial hints state from sessionStorage (resets each session)
+function loadTutorialState() {
+    // Session storage ensures hints show once per session
+    // Don't load from storage - always start fresh per session
+}
+
+// SPRINT 2: Show tutorial hint
+function showTutorialHint(hintKey) {
+    if (tutorialHints[hintKey] && !tutorialHints[hintKey].shown) {
+        tutorialHints[hintKey].shown = true;
+        activeHint = tutorialHints[hintKey].text;
+        hintTimer = HINT_DURATION;
+    }
+}
+
+// SPRINT 2: Update tutorial hints based on game triggers
+function updateTutorialHints() {
+    if (gameState !== 'playing') return;
+
+    // Show jump hint when first grounded
+    if (tutorialHints.jump.trigger === 'firstGrounded' && player.grounded && !tutorialHints.jump.shown) {
+        showTutorialHint('jump');
+    }
+
+    // Show double jump hint when first in air
+    if (tutorialHints.doubleJump.trigger === 'firstAirJump' && !player.grounded && player.jumpCount === 1 && !tutorialHints.doubleJump.shown) {
+        showTutorialHint('doubleJump');
+    }
+
+    // Show ground pound hint when airborne
+    if (tutorialHints.groundPound.trigger === 'firstAirborne' && !player.grounded && player.jumpCount > 0 && !tutorialHints.groundPound.shown) {
+        showTutorialHint('groundPound');
+    }
+
+    // Show stomp hint when enemy is nearby
+    if (tutorialHints.stomp.trigger === 'firstEnemyNearby') {
+        const enemyNearby = enemies.some(e => {
+            const dx = e.x - player.x;
+            const dy = e.y - player.y;
+            return Math.sqrt(dx * dx + dy * dy) < 150;
+        });
+        if (enemyNearby && !tutorialHints.stomp.shown) {
+            showTutorialHint('stomp');
+        }
+    }
+
+    // Show checkpoint hint when checkpoint is nearby
+    if (tutorialHints.checkpoint.trigger === 'firstCheckpointNearby' && currentLevelData.checkpoints) {
+        const checkpointNearby = currentLevelData.checkpoints.some(cp => {
+            if (cp.collected) return false;
+            const dx = cp.x - player.x;
+            const dy = cp.y - player.y;
+            return Math.sqrt(dx * dx + dy * dy) < 150;
+        });
+        if (checkpointNearby && !tutorialHints.checkpoint.shown) {
+            showTutorialHint('checkpoint');
+        }
+    }
+
+    // Show dash hint when grounded and dash is available
+    if (tutorialHints.dash.trigger === 'firstDashAvailable' && player.grounded && player.dashCooldown <= 0 && !tutorialHints.dash.shown) {
+        showTutorialHint('dash');
+    }
+
+    // Update hint timer
+    if (hintTimer > 0) {
+        hintTimer--;
+        if (hintTimer <= 0) {
+            activeHint = null;
+        }
+    }
+}
+
+// SPRINT 2: Draw tutorial hint
+function drawTutorialHint() {
+    if (!activeHint) return;
+
+    const hintWidth = 400;
+    const hintHeight = 60;
+    const hintX = (canvas.width - hintWidth) / 2;
+    const hintY = 100;
+
+    // Hint background with bubble effect
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+    ctx.strokeStyle = '#ff69b4';
+    ctx.lineWidth = 3;
+
+    // Draw rounded rectangle
+    ctx.beginPath();
+    ctx.roundRect(hintX, hintY, hintWidth, hintHeight, 15);
+    ctx.fill();
+    ctx.stroke();
+
+    // Hint text
+    ctx.fillStyle = '#333';
+    ctx.font = 'bold 18px Comic Sans MS';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(activeHint, canvas.width / 2, hintY + hintHeight / 2);
+
+    // Add sparkle effect
+    if (animationFrame % 10 === 0) {
+        createParticles(hintX + Math.random() * hintWidth, hintY, '#ffd700', 2, {
+            spread: 3, gravity: 0.05, life: 0.5, size: { min: 2, max: 4 }, fade: 0.1, shape: 'star'
+        });
+    }
+}
+
+// SPRINT 2: Ground Pound System
+let groundPound = {
+    active: false,
+    cooldown: 0,
+    velocity: 25,
+    radius: 80,
+    damage: 50,
+    cooldownTime: 60, // 1 second
+    canGroundPound: true
+};
 
 // Safe localStorage wrapper with error handling
 function safeLocalStorage(action, key, value = null) {
@@ -44,6 +223,10 @@ function safeLocalStorage(action, key, value = null) {
 
 // Initialize high score with error handling
 highScore = parseInt(safeLocalStorage('get', 'candyLandyHighScore')) || 0;
+
+// SPRINT 2: Load level progress and tutorial state
+loadLevelProgress();
+loadTutorialState();
 
 // Audio Context for sound effects
 let audioContext = null;
@@ -162,35 +345,6 @@ function playSound(type) {
             oscillator.start(audioContext.currentTime);
             oscillator.stop(audioContext.currentTime + 0.1);
             break;
-        case 'combo':
-            // Play ascending notes for combo
-            const comboNotes = [523, 659, 784, 1047, 1319];
-            comboNotes.forEach((freq, i) => {
-                const osc = audioContext.createOscillator();
-                const gain = audioContext.createGain();
-                osc.connect(gain);
-                gain.connect(audioContext.destination);
-                osc.frequency.setValueAtTime(freq, audioContext.currentTime + i * 0.1);
-                gain.gain.setValueAtTime(0.15 * volumeGain, audioContext.currentTime + i * 0.1);
-                gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + i * 0.1 + 0.1);
-                osc.start(audioContext.currentTime + i * 0.1);
-                osc.stop(audioContext.currentTime + i * 0.1 + 0.1);
-            });
-            break;
-        case 'comboSparkle':
-            // Soft sparkle sound
-            const sparkleFreq = 880 + Math.random() * 440;
-            const osc = audioContext.createOscillator();
-            const gain = audioContext.createGain();
-            osc.connect(gain);
-            gain.connect(audioContext.destination);
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(sparkleFreq, audioContext.currentTime);
-            gain.gain.setValueAtTime(0.2 * volumeGain, audioContext.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15);
-            osc.start(audioContext.currentTime);
-            osc.stop(audioContext.currentTime + 0.15);
-            break;
         case 'collect':
             oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
             oscillator.frequency.exponentialRampToValueAtTime(1200, audioContext.currentTime + 0.1);
@@ -302,6 +456,16 @@ function playSound(type) {
             gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
             oscillator.start(audioContext.currentTime);
             oscillator.stop(audioContext.currentTime + 0.3);
+            break;
+        case 'groundPound':
+            // Heavy impact sound
+            oscillator.type = 'sawtooth';
+            oscillator.frequency.setValueAtTime(150, audioContext.currentTime);
+            oscillator.frequency.exponentialRampToValueAtTime(50, audioContext.currentTime + 0.2);
+            gainNode.gain.setValueAtTime(0.5 * volumeGain, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.2);
             break;
     }
 }
@@ -436,14 +600,6 @@ let player = {
     canWallJump: true
 };
 
-// PHASE 2: Enhanced camera system with Lerp
-let cameraX = 0;
-let cameraY = 0;
-let cameraZoom = 1;
-let targetCameraX = 0;
-let targetCameraY = 0;
-let targetCameraZoom = 1;
-
 // PHASE 1: Explicit jump state tracking
 let jumpState = 'grounded'; // 'grounded', 'jumping', 'doubleJump', 'falling', 'wallSliding'
 
@@ -470,30 +626,6 @@ let particles = [];
 
 // Player trail system for visual feedback
 let playerTrail = [];
-
-// Enhanced sparkle particle effect for combos
-function createSparkles(x, y, color, count = 5) {
-    for (let i = 0; i < count; i++) {
-        const angle = (Math.PI * 2 * i) / count;
-        const speed = Math.random() * 4 + 2;
-
-        particles.push({
-            x: x,
-            y: y,
-            vx: Math.cos(angle) * speed,
-            vy: Math.sin(angle) * speed,
-            life: 0.8,
-            maxLife: 0.8,
-            color: color,
-            size: Math.random() * 4 + 2,
-            gravity: 0.05,
-            fade: 0.02,
-            shape: 'star',
-            rotation: Math.random() * Math.PI * 2,
-            rotationSpeed: (Math.random() - 0.5) * 0.5
-        });
-    }
-}
 
 function createParticles(x, y, color, count = 10, options = {}) {
     // Validate inputs
@@ -719,189 +851,6 @@ let screenShake = {
     duration: 0
 };
 
-// PHASE 2: Enhanced camera functions
-function lerp(start, end, factor) {
-    return start + (end - start) * factor;
-}
-
-function updateCamera() {
-    // Smooth camera following (Lerp)
-    // Player is centered at 400, 300 (canvas center)
-    const centerX = 400;
-    const centerY = 300;
-
-    targetCameraX = centerX - player.x - player.width / 2;
-    targetCameraY = centerY - player.y - player.height / 2;
-
-    // Add zoom effect on power-up collection
-    if (cameraZoom > targetCameraZoom) {
-        cameraZoom = lerp(cameraZoom, targetCameraZoom, 0.1);
-    } else {
-        cameraZoom = lerp(cameraZoom, 1, 0.1);
-    }
-
-    // Apply camera to screen shake offset
-    cameraX = lerp(cameraX, targetCameraX, 0.1);
-    cameraY = lerp(cameraY, targetCameraY, 0.1);
-}
-
-function triggerCameraZoom(intensity = 0.2, duration = 15) {
-    targetCameraZoom = intensity;
-    setTimeout(() => {
-        targetCameraZoom = 1;
-    }, duration * 16); // Convert to ms
-}
-
-// Level transition functions
-function startLevelTransition() {
-    if (transitionState !== null) return; // Already transitioning
-
-    transitionState = 'fadingOut';
-    transitionProgress = 0;
-    transitionDuration = 60; // 1 second fade
-}
-
-function updateLevelTransition() {
-    if (transitionState === null) return;
-
-    if (transitionState === 'loading') {
-        loadingTimer++;
-        if (loadingTimer >= 60) {
-            loadingTimer = 0;
-            loadingCountdown--;
-            if (loadingCountdown <= 0) {
-                // Start panning camera to new level
-                const nextLevelIndex = currentLevel + 1;
-                if (nextLevelIndex >= levels.length) {
-                    // Game complete!
-                    transitionState = 'fadingIn';
-                    transitionProgress = 0;
-                } else {
-                    const nextLevelData = levels[nextLevelIndex];
-                    transitionTargetCameraX = nextLevelData.platforms[0].x - 100;
-                    transitionTargetCameraY = nextLevelData.platforms[0].y - 200;
-                    transitionState = 'panning';
-                    transitionProgress = 0;
-                }
-            }
-        }
-    } else if (transitionState === 'fadingOut') {
-        transitionProgress += 1 / transitionDuration;
-        if (transitionProgress >= 1) {
-            transitionProgress = 1;
-            transitionState = 'loading';
-            loadingTimer = 0;
-            loadingCountdown = 3;
-        }
-    } else if (transitionState === 'fadingIn') {
-        transitionProgress += 1 / transitionDuration;
-        if (transitionProgress >= 1) {
-            transitionProgress = 0;
-            transitionState = null;
-            // Go to next level
-            loadLevel(currentLevel + 1);
-        }
-    } else if (transitionState === 'panning') {
-        // Smooth camera pan
-        cameraX = lerp(cameraX, transitionTargetCameraX, 0.05);
-        cameraY = lerp(cameraY, transitionTargetCameraY, 0.05);
-        transitionProgress += 1 / transitionDuration;
-
-        if (transitionProgress >= 1) {
-            transitionProgress = 0;
-            transitionState = 'fadingIn';
-            playSound('levelComplete');
-            triggerScreenShake(8, 10);
-            createConfetti(canvas.width / 2, canvas.height / 2, 40);
-        }
-    }
-}
-
-function drawLevelTransition() {
-    if (transitionState === null) return;
-
-    // Draw game behind the transition
-    if (transitionState === 'loading') {
-        // Loading screen with candy theme
-        const loadingText = `Loading Level ${currentLevel + 2}... ${loadingCountdown}s`;
-
-        // Animated candy background
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        // Floating candies
-        const candyCount = 5;
-        for (let i = 0; i < candyCount; i++) {
-            const candyX = (animationFrame * 0.5 + i * 150) % (canvas.width + 40) - 20;
-            const candyY = 100 + i * 80 + Math.sin(animationFrame * 0.03 + i) * 10;
-            const candySize = 15 + Math.sin(animationFrame * 0.05 + i * 2) * 3;
-
-            // Candy glow
-            ctx.fillStyle = 'rgba(255, 215, 0, 0.3)';
-            ctx.beginPath();
-            ctx.arc(candyX + 15, candyY + 15, candySize, 0, Math.PI * 2);
-            ctx.fill();
-
-            // Candy
-            ctx.fillStyle = '#ffd700';
-            ctx.beginPath();
-            ctx.arc(candyX + 15, candyY + 15, candySize, 0, Math.PI * 2);
-            ctx.fill();
-
-            // Candy shine
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
-            ctx.beginPath();
-            ctx.arc(candyX + 12, candyY + 12, candySize / 3, 0, Math.PI * 2);
-            ctx.fill();
-        }
-
-        // Loading text with animation
-        ctx.fillStyle = '#ff69b4';
-        ctx.font = 'bold 36px Comic Sans MS';
-        ctx.textAlign = 'center';
-        ctx.shadowColor = '#ff1493';
-        ctx.shadowBlur = 20;
-        ctx.fillText('🍬 ' + loadingText + ' 🍬', canvas.width / 2, canvas.height / 2);
-        ctx.shadowBlur = 0;
-
-        // Progress bar
-        const barWidth = 300;
-        const barHeight = 20;
-        const progress = (3 - loadingCountdown) / 3;
-
-        // Bar background
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
-        ctx.fillRect(canvas.width / 2 - barWidth / 2, canvas.height / 2 + 50, barWidth, barHeight);
-
-        // Progress fill
-        ctx.fillStyle = '#00ff00';
-        ctx.fillRect(canvas.width / 2 - barWidth / 2, canvas.height / 2 + 50, barWidth * progress, barHeight);
-
-        // Bar border
-        ctx.strokeStyle = '#ff69b4';
-        ctx.lineWidth = 3;
-        ctx.strokeRect(canvas.width / 2 - barWidth / 2, canvas.height / 2 + 50, barWidth, barHeight);
-    } else if (transitionState === 'fadingOut' || transitionState === 'fadingIn') {
-        // Fade overlay
-        ctx.fillStyle = `rgba(255, 105, 180, ${transitionProgress})`;
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        // Add sparkle effect during fade
-        if (transitionProgress > 0 && transitionProgress < 1) {
-            const sparkleCount = 10;
-            for (let i = 0; i < sparkleCount; i++) {
-                const sparkleX = (animationFrame * 2 + i * 100) % canvas.width;
-                const sparkleY = (animationFrame + i * 50) % canvas.height;
-
-                ctx.fillStyle = `rgba(255, 255, 255, ${0.3 * (1 - Math.abs(transitionProgress - 0.5))})`;
-                ctx.font = '20px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText('✨', sparkleX, sparkleY);
-            }
-        }
-    }
-}
-
 function triggerScreenShake(intensity = SETTINGS.screenShakeIntensity, duration = 10) {
     screenShake.intensity = Math.max(screenShake.intensity, intensity);
     screenShake.duration = Math.max(screenShake.duration, duration);
@@ -925,9 +874,13 @@ function updateScreenShake() {
 
 // Level definitions with increasing difficulty
 // PHASE 2: Added checkpoints, time limits, and dash power-ups
+// SPRINT 2: Added level names and secret collectibles
 const levels = [
-    // Level 1: Test Level - Enemy Stomp Testing
+    // Level 1: Tutorial
     {
+        name: "Tutorial",
+        description: "Learn the basics",
+        thumbnail: "🎓",
         platforms: [
             { x: 0, y: 550, width: 800, height: 50 },
             { x: 200, y: 450, width: 120, height: 20 },
@@ -938,6 +891,11 @@ const levels = [
             { x: 250, y: 420, collected: false },
             { x: 450, y: 320, collected: false },
             { x: 650, y: 220, collected: false }
+        ],
+        // SPRINT 2: Secret collectibles
+        secrets: [
+            { x: 50, y: 520, collected: false, id: 'secret1_1' },
+            { x: 750, y: 150, collected: false, id: 'secret1_2' }
         ],
         powerUps: [],
         enemies: [
@@ -956,8 +914,11 @@ const levels = [
         timeLimit: 120, // 2 minutes
         timeBonusMultiplier: 2
     },
-    // Level 2: Moving elements and more candy
+    // Level 2: Moving Platforms
     {
+        name: "Moving Platforms",
+        description: "Master timing and movement",
+        thumbnail: "🎢",
         platforms: [
             { x: 0, y: 550, width: 800, height: 50 },
             { x: 150, y: 450, width: 120, height: 20, moving: true, range: 100, startX: 150 },
@@ -971,6 +932,11 @@ const levels = [
             { x: 650, y: 220, collected: false },
             { x: 140, y: 220, collected: false },
             { x: 350, y: 520, collected: false }
+        ],
+        // SPRINT 2: Secret collectibles
+        secrets: [
+            { x: 700, y: 500, collected: false, id: 'secret2_1' },
+            { x: 50, y: 200, collected: false, id: 'secret2_2' }
         ],
         powerUps: [
             { x: 280, y: 420, type: POWER_UPS.JUMP, collected: false },
@@ -992,8 +958,11 @@ const levels = [
         timeLimit: 180, // 3 minutes
         timeBonusMultiplier: 3
     },
-    // Level 3: Challenging with enemies and obstacles
+    // Level 3: Challenge Mode
     {
+        name: "Challenge Mode",
+        description: "The ultimate test!",
+        thumbnail: "🔥",
         platforms: [
             { x: 0, y: 550, width: 200, height: 50 },
             { x: 300, y: 500, width: 100, height: 20 },
@@ -1013,6 +982,11 @@ const levels = [
             { x: 170, y: 170, collected: false },
             { x: 740, y: 120, collected: false },
             { x: 100, y: 520, collected: false }
+        ],
+        // SPRINT 2: Secret collectibles
+        secrets: [
+            { x: 20, y: 320, collected: false, id: 'secret3_1' },
+            { x: 780, y: 420, collected: false, id: 'secret3_2' }
         ],
         powerUps: [
             { x: 270, y: 320, type: POWER_UPS.SPEED, collected: false },
@@ -1053,12 +1027,50 @@ let keys = {};
 document.addEventListener('keydown', (e) => {
     keys[e.key] = true;
 
-    // Start game
+    // Start game or level select
     if (e.key === ' ' || e.key === 'Enter' || e.key === 'ArrowUp') {
         if (gameState === 'start') {
-            gameState = 'playing';
-            startBackgroundMusic();
-            loadLevel(0);
+            gameState = 'levelSelect';
+        } else if (gameState === 'levelSelect') {
+            // Start first unlocked level
+            const firstUnlocked = levelProgress.unlocked.findIndex(u => u);
+            if (firstUnlocked !== -1) {
+                gameState = 'playing';
+                startBackgroundMusic();
+                loadLevel(firstUnlocked);
+            }
+        }
+    }
+
+    // SPRINT 2: Level select navigation
+    if (gameState === 'levelSelect') {
+        if (e.key === 'ArrowLeft') {
+            // Navigate left
+        } else if (e.key === 'ArrowRight') {
+            // Navigate right
+        } else if (e.key >= '1' && e.key <= '3') {
+            const levelNum = parseInt(e.key) - 1;
+            if (levelProgress.unlocked[levelNum]) {
+                gameState = 'playing';
+                startBackgroundMusic();
+                loadLevel(levelNum);
+            }
+        }
+    }
+
+    // SPRINT 2: Ground Pound mechanic (DOWN + JUMP while airborne)
+    if (e.key === 'ArrowDown' && !player.grounded && groundPound.cooldown <= 0 && groundPound.canGroundPound && gameState === 'playing') {
+        // Check if jump key is pressed
+        if (keys[' '] || keys['Enter'] || keys['ArrowUp']) {
+            groundPound.active = true;
+            groundPound.cooldown = groundPound.cooldownTime;
+            groundPound.canGroundPound = false;
+            player.vy = groundPound.velocity; // Fast downward velocity
+            playSound('groundPound');
+            createParticles(player.x + player.width/2, player.y + player.height, '#ff8800', 10, {
+                spread: 6, gravity: 0.2, life: 0.8, size: { min: 4, max: 8 }, fade: 0.15, shape: 'circle'
+            });
+            triggerScreenShake(8, 12);
         }
     }
 
@@ -1084,6 +1096,8 @@ document.addEventListener('keydown', (e) => {
         } else if (gameState === 'paused') {
             gameState = 'playing';
             startBackgroundMusic();
+        } else if (gameState === 'levelSelect') {
+            gameState = 'start';
         }
     }
 
@@ -1117,19 +1131,17 @@ function loadLevel(levelIndex) {
         playSound('levelComplete');
         triggerScreenShake(10, 15);
         createConfetti(canvas.width / 2, canvas.height / 2, 50);
+
+        // SPRINT 2: Update high score
+        if (score > highScore) {
+            highScore = score;
+            safeLocalStorage('set', 'candyLandyHighScore', highScore.toString());
+        }
         return;
     }
 
     currentLevel = levelIndex;
     currentLevelData = JSON.parse(JSON.stringify(levels[levelIndex]));
-
-    // Reset camera
-    cameraX = 0;
-    cameraY = 0;
-    cameraZoom = 1;
-    targetCameraX = 0;
-    targetCameraY = 0;
-    targetCameraZoom = 1;
 
     // Reset player position
     player.x = 100;
@@ -1147,6 +1159,10 @@ function loadLevel(levelIndex) {
     // PHASE 2: Reset wall slide state
     player.wallSliding = false;
     player.wallDir = 0;
+    // SPRINT 2: Reset ground pound state
+    groundPound.active = false;
+    groundPound.cooldown = 0;
+    groundPound.canGroundPound = true;
 
     // Clear particles
     particles = [];
@@ -1166,6 +1182,11 @@ function loadLevel(levelIndex) {
     // PHASE 2: Initialize checkpoints
     if (!currentLevelData.checkpoints) {
         currentLevelData.checkpoints = [];
+    }
+
+    // SPRINT 2: Initialize secrets
+    if (!currentLevelData.secrets) {
+        currentLevelData.secrets = [];
     }
 
     // Initialize enemies
@@ -1214,6 +1235,50 @@ function loadLevel(levelIndex) {
 // Update functions
 function updatePlayer() {
     if (gameState !== 'playing') return;
+
+    // SPRINT 2: Handle ground pound cooldown
+    if (groundPound.cooldown > 0) {
+        groundPound.cooldown--;
+    }
+
+    // SPRINT 2: Reset ground pound ability when grounded
+    if (player.grounded) {
+        groundPound.canGroundPound = true;
+        if (groundPound.active) {
+            // Ground pound impact!
+            groundPound.active = false;
+            playSound('enemyHit');
+            triggerScreenShake(15, 20);
+
+            // Create impact particles
+            createExplosion(player.x + player.width/2, player.y + player.height, '#ff4400', 30);
+
+            // Damage enemies in radius
+            enemies.forEach((enemy, enemyIndex) => {
+                const dx = (enemy.x + enemy.width/2) - (player.x + player.width/2);
+                const dy = (enemy.y + enemy.height/2) - (player.y + player.height);
+                const distance = Math.sqrt(dx * dx + dy * dy);
+
+                if (distance < groundPound.radius) {
+                    // Enemy is in range - destroy it!
+                    createExplosion(enemy.x + enemy.width/2, enemy.y + enemy.height/2, '#ff6600', 20);
+                    score += 75; // Bonus points for ground pound kill
+                    enemies.splice(enemyIndex, 1);
+                }
+            });
+        }
+    }
+
+    // SPRINT 2: Ground pound active - fast fall
+    if (groundPound.active) {
+        player.vy = groundPound.velocity;
+        // Create trail particles
+        if (animationFrame % 3 === 0) {
+            createParticles(player.x + player.width/2, player.y, '#ff6600', 3, {
+                spread: 4, gravity: 0.05, life: 0.5, size: { min: 3, max: 6 }, fade: 0.1, shape: 'circle'
+            });
+        }
+    }
 
     // PHASE 2: Handle dash
     if (player.isDashing) {
@@ -1563,16 +1628,7 @@ function updatePlayer() {
                 if (combo % 5 === 0) {
                     playSound('combo');
                     triggerScreenShake(2, 5);
-                    // Add sparkle effect at combo milestone
-                    createSparkles(player.x, player.y, '#ffd700', 15);
                 }
-                // Add sparkle sound every 3 combos
-                if (combo % 3 === 0) {
-                    playSound('comboSparkle');
-                }
-                // Add sparkle effect on every candy collection during combo
-                createSparkles(candy.x + 10, candy.y + 10, '#00ffff', 5);
-                createSparkles(candy.x + 10, candy.y + 10, '#ff00ff', 5);
                 comboMultiplier = Math.min(combo, 5);
             } else {
                 combo = 1;
@@ -1602,6 +1658,32 @@ function updatePlayer() {
         }
     });
 
+    // SPRINT 2: Collect secret collectibles
+    if (currentLevelData.secrets) {
+        currentLevelData.secrets.forEach(secret => {
+            if (!secret.collected &&
+                player.x < secret.x + 25 &&
+                player.x + player.width > secret.x &&
+                player.y < secret.y + 25 &&
+                player.y + player.height > secret.y) {
+
+                secret.collected = true;
+                score += 500; // Bonus points for secret
+
+                // Update secrets found count
+                levelProgress.secretsFound[currentLevel] = currentLevelData.secrets.filter(s => s.collected).length;
+                saveLevelProgress();
+
+                playSound('powerup');
+                triggerScreenShake(8, 12);
+                createExplosion(secret.x + 12, secret.y + 12, '#9370db', 25);
+                createParticles(secret.x + 12, secret.y + 12, '#ffd700', 15, {
+                    spread: 10, gravity: 0.1, life: 1.5, size: { min: 4, max: 8 }, fade: 0.05, shape: 'star'
+                });
+            }
+        });
+    }
+
     // Collect power-ups
     powerUps.forEach((powerUp, index) => {
         if (!powerUp.collected &&
@@ -1615,11 +1697,7 @@ function updatePlayer() {
             player.powerUpTimer = 300; // 5 seconds at 60fps
             playSound('powerup');
             triggerScreenShake(4, 6);
-            triggerCameraZoom(1.3, 15); // Camera zoom effect
-            createExplosion(powerUp.x + 10, powerUp.y + 10, '#00ff00', 25);
-            createParticles(powerUp.x + 10, powerUp.y + 10, '#00ffff', 15);
-            createParticles(powerUp.x + 10, powerUp.y + 10, '#00ff00', 15);
-            createSparkles(powerUp.x + 10, powerUp.y + 10, '#ffffff', 20);
+            createExplosion(powerUp.x + 10, powerUp.y + 10, '#00ff00', 15);
         }
     });
 
@@ -1654,23 +1732,17 @@ function updatePlayer() {
                 triggerScreenShake(5, 8);
 
                 // Create explosion effect at enemy position
-                createExplosion(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, '#ff6600', 35);
+                createExplosion(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, '#ff6600', 25);
 
-                // Create star burst particles for successful stomp (multi-color)
-                const enemyColors = ['#ff6600', '#ff0000', '#ffaa00', '#ffff00'];
-                enemyColors.forEach(color => {
-                    createParticles(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, color, 8, {
-                        spread: 12,
-                        gravity: 0.1,
-                        life: 1.5,
-                        size: { min: 4, max: 10 },
-                        fade: 0.015,
-                        shape: 'star'
-                    });
+                // Create star burst particles for successful stomp
+                createParticles(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, '#ffff00', 15, {
+                    spread: 12,
+                    gravity: 0.1,
+                    life: 1.5,
+                    size: { min: 3, max: 8 },
+                    fade: 0.015,
+                    shape: 'star'
                 });
-
-                // Create small sparkles for extra effect
-                createSparkles(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, '#ffffff', 10);
 
                 // Award points for killing enemy
                 const enemyPoints = 50;
@@ -1754,8 +1826,20 @@ function updatePlayer() {
         const allCollected = currentLevelData.candies.every(c => c.collected);
 
         if (allCollected) {
-            // Trigger level transition
-            startLevelTransition();
+            // SPRINT 2: Save level progress
+            if (score > levelProgress.bestScores[currentLevel]) {
+                levelProgress.bestScores[currentLevel] = score;
+            }
+
+            // Unlock next level
+            if (currentLevel + 1 < levels.length) {
+                levelProgress.unlocked[currentLevel + 1] = true;
+            }
+
+            saveLevelProgress();
+
+            playSound('levelComplete');
+            loadLevel(currentLevel + 1);
         }
     }
 
@@ -1886,9 +1970,9 @@ function drawStartScreen() {
     ctx.fillText('⬅️ ➡️ Arrow Keys - Move', 230, 355);
     ctx.fillText('⬆️ SPACE - Jump (Double tap for double jump!)', 230, 385);
     ctx.fillText('⇧ SHIFT - Dash (invincible, double speed)', 230, 415);
-    ctx.fillText('🍬 Collect all candies to advance', 230, 445);
-    ctx.fillText('⚠️ Avoid enemies and don\'t fall!', 230, 475);
-    ctx.fillText('🔊 Keys 0-5 - Adjust volume', 230, 505);
+    ctx.fillText('🔽+⬆️ Ground Pound (while airborne)', 230, 445);
+    ctx.fillText('🍬 Collect all candies to advance', 230, 475);
+    ctx.fillText('⚠️ Avoid enemies and don\'t fall!', 230, 505);
 
     // High score
     ctx.textAlign = 'center';
@@ -1899,6 +1983,124 @@ function drawStartScreen() {
     // Animated character
     const bounce = Math.sin(animationFrame * 0.1) * 10;
     drawCharacter(canvas.width / 2, 500 + bounce);
+}
+
+// SPRINT 2: Level Select Screen
+function drawLevelSelectScreen() {
+    // Gradient background
+    const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    gradient.addColorStop(0, '#87CEEB');
+    gradient.addColorStop(1, '#E0F7FA');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Animated clouds
+    const cloudOffset = Math.sin(animationFrame * 0.01) * 20;
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+    drawCloud(100 + cloudOffset, 80, 60);
+    drawCloud(400 - cloudOffset, 120, 80);
+    drawCloud(650 + cloudOffset, 60, 70);
+
+    // Title
+    ctx.fillStyle = '#ff1493';
+    ctx.font = 'bold 48px Comic Sans MS';
+    ctx.textAlign = 'center';
+    ctx.shadowColor = '#ff69b4';
+    ctx.shadowBlur = 10;
+    ctx.fillText('🍭 Select Level 🍭', canvas.width / 2, 80);
+    ctx.shadowBlur = 0;
+
+    // Draw level cards
+    const cardWidth = 200;
+    const cardHeight = 280;
+    const cardSpacing = 50;
+    const startX = (canvas.width - (3 * cardWidth + 2 * cardSpacing)) / 2;
+
+    levels.forEach((level, index) => {
+        const x = startX + index * (cardWidth + cardSpacing);
+        const y = 150;
+        const isUnlocked = levelProgress.unlocked[index];
+        const isSelected = index === 0; // Default selection
+
+        // Card background
+        ctx.fillStyle = isUnlocked ? 'rgba(255, 255, 255, 0.95)' : 'rgba(100, 100, 100, 0.6)';
+        ctx.strokeStyle = isUnlocked ? '#ff69b4' : '#666';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.roundRect(x, y, cardWidth, cardHeight, 15);
+        ctx.fill();
+        ctx.stroke();
+
+        // Lock icon for locked levels
+        if (!isUnlocked) {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+            ctx.fillRect(x, y, cardWidth, cardHeight);
+
+            ctx.fillStyle = '#666';
+            ctx.font = 'bold 60px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('🔒', x + cardWidth / 2, y + cardHeight / 2);
+
+            ctx.font = '16px Comic Sans MS';
+            ctx.fillStyle = '#888';
+            ctx.fillText('Locked', x + cardWidth / 2, y + cardHeight - 30);
+        } else {
+            // Level thumbnail/icon
+            ctx.font = 'bold 50px Arial';
+            ctx.fillText(level.thumbnail, x + cardWidth / 2, y + 50);
+
+            // Level name
+            ctx.fillStyle = '#ff1493';
+            ctx.font = 'bold 20px Comic Sans MS';
+            ctx.fillText(level.name, x + cardWidth / 2, y + 90);
+
+            // Level description
+            ctx.fillStyle = '#666';
+            ctx.font = '14px Comic Sans MS';
+            ctx.fillText(level.description, x + cardWidth / 2, y + 115);
+
+            // Best score
+            const bestScore = levelProgress.bestScores[index];
+            ctx.fillStyle = '#ffd700';
+            ctx.font = 'bold 16px Comic Sans MS';
+            ctx.fillText('🏆 Best: ' + bestScore, x + cardWidth / 2, y + 150);
+
+            // Secrets found
+            const secretsFound = levelProgress.secretsFound[index];
+            const totalSecrets = levelProgress.totalSecrets[index];
+            ctx.fillStyle = '#9370db';
+            ctx.font = '14px Comic Sans MS';
+            ctx.fillText('💎 Secrets: ' + secretsFound + '/' + totalSecrets, x + cardWidth / 2, y + 180);
+
+            // Play button
+            ctx.fillStyle = '#00ff00';
+            ctx.fillRect(x + 50, y + 200, 100, 40);
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 18px Comic Sans MS';
+            ctx.fillText('▶ PLAY', x + cardWidth / 2, y + 228);
+
+            // Key hint
+            ctx.fillStyle = '#888';
+            ctx.font = '12px Comic Sans MS';
+            ctx.fillText('Press ' + (index + 1), x + cardWidth / 2, y + 265);
+        }
+    });
+
+    // Instructions
+    ctx.fillStyle = '#333';
+    ctx.font = '20px Comic Sans MS';
+    ctx.textAlign = 'center';
+    ctx.fillText('Press 1-3 to select level or SPACE to start!', canvas.width / 2, 480);
+
+    // High score
+    ctx.fillStyle = '#ff1493';
+    ctx.font = '18px Comic Sans MS';
+    ctx.fillText('🏆 Total High Score: ' + highScore, canvas.width / 2, 520);
+
+    // Back instruction
+    ctx.fillStyle = '#666';
+    ctx.font = '16px Comic Sans MS';
+    ctx.fillText('ESC to return', canvas.width / 2, 560);
 }
 
 function drawCloud(x, y, size) {
@@ -2022,14 +2224,14 @@ function drawCharacter(x, y) {
     ctx.stroke();
 }
 
-function drawGame() {
-    // Draw HUD first (before screen shake - this will stay stable)
+// SPRINT 2: Draw HUD (separate function for clarity)
+function drawHUD() {
     // HUD background
     ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-    ctx.fillRect(10, 10, 280, 250);
+    ctx.fillRect(10, 10, 280, 280);
     ctx.strokeStyle = '#ff69b4';
     ctx.lineWidth = 2;
-    ctx.strokeRect(10, 10, 280, 250);
+    ctx.strokeRect(10, 10, 280, 280);
 
     // Score
     ctx.fillStyle = '#ff1493';
@@ -2065,6 +2267,15 @@ function drawGame() {
     ctx.fillStyle = '#00ff00';
     ctx.fillText('🚩 Checkpoints: ' + collectedCheckpoints + '/' + totalCheckpoints, 20, 170);
 
+    // SPRINT 2: Secrets indicator
+    if (currentLevelData.secrets) {
+        const collectedSecrets = currentLevelData.secrets.filter(s => s.collected).length;
+        const totalSecrets = currentLevelData.secrets.length;
+        ctx.fillStyle = '#9370db';
+        ctx.font = 'bold 16px Comic Sans MS';
+        ctx.fillText('💎 Secrets: ' + collectedSecrets + '/' + totalSecrets, 20, 190);
+    }
+
     // PHASE 2: Timer display
     if (levels[currentLevel].timeLimit) {
         const timeRemaining = levels[currentLevel].timeLimit - Math.floor((animationFrame - levelStartTime) / 60);
@@ -2077,32 +2288,39 @@ function drawGame() {
 
         ctx.fillStyle = timeColor;
         ctx.font = '16px Comic Sans MS';
-        ctx.fillText(`⏱️ Time: ${Math.max(0, Math.ceil(timeRemaining))}s`, 20, 190);
+        ctx.fillText(`⏱️ Time: ${Math.max(0, Math.ceil(timeRemaining))}s`, 20, 210);
     }
 
     // Combo display
     if (combo > 1) {
         ctx.fillStyle = '#ffd700';
         ctx.font = 'bold 18px Comic Sans MS';
-        ctx.fillText('🔥 ' + combo + 'x COMBO!', 20, 210);
+        ctx.fillText('🔥 ' + combo + 'x COMBO!', 20, 230);
     }
 
     // Time bonus
     if (timeBonus > 0) {
         ctx.fillStyle = '#00ff00';
         ctx.font = '16px Comic Sans MS';
-        ctx.fillText('⏱️ Bonus: +' + timeBonus, 20, 230);
+        ctx.fillText('⏱️ Bonus: +' + timeBonus, 20, 250);
     }
 
     // PHASE 2: Dash cooldown indicator
     if (player.dashCooldown > 0) {
         ctx.fillStyle = '#ffff00';
         ctx.font = '16px Comic Sans MS';
-        ctx.fillText(`⚡ Dash: ${Math.ceil(player.dashCooldown / 60)}s`, 20, 250);
+        ctx.fillText(`⚡ Dash: ${Math.ceil(player.dashCooldown / 60)}s`, 20, 270);
     } else {
         ctx.fillStyle = '#00ff00';
         ctx.font = '16px Comic Sans MS';
-        ctx.fillText('⚡ Dash: Ready!', 20, 250);
+        ctx.fillText('⚡ Dash: Ready!', 20, 270);
+    }
+
+    // SPRINT 2: Ground Pound cooldown indicator
+    if (groundPound.cooldown > 0) {
+        ctx.fillStyle = '#ff8800';
+        ctx.font = '14px Comic Sans MS';
+        ctx.fillText(`💥 Pound: ${Math.ceil(groundPound.cooldown / 60)}s`, 20, 285);
     }
 
     // Power-up indicator
@@ -2127,12 +2345,14 @@ function drawGame() {
     ctx.font = '16px Comic Sans MS';
     ctx.textAlign = 'right';
     ctx.fillText('🏆 Best: ' + highScore, canvas.width - 20, 590);
+}
 
-    // Apply camera transform
-    ctx.save();
-    ctx.translate(cameraX * cameraZoom, cameraY * cameraZoom);
+function drawGame() {
+    // Draw HUD first (before screen shake - this will stay stable)
+    drawHUD();
 
     // Apply screen shake
+    ctx.save();
     ctx.translate(screenShake.x, screenShake.y);
 
     // Gradient sky background
@@ -2258,6 +2478,49 @@ function drawGame() {
         }
     });
 
+    // SPRINT 2: Draw secret collectibles with sparkle/glow
+    if (currentLevelData.secrets) {
+        currentLevelData.secrets.forEach((secret, index) => {
+            if (!secret.collected) {
+                const sparkle = Math.sin(animationFrame * 0.1 + index * 2) * 5;
+                const glowSize = 20 + Math.sin(animationFrame * 0.15) * 5;
+
+                // Secret glow (purple/magic)
+                ctx.fillStyle = 'rgba(147, 112, 219, 0.4)';
+                ctx.beginPath();
+                ctx.arc(secret.x + 12, secret.y + 12 + sparkle, glowSize, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Inner glow
+                ctx.fillStyle = 'rgba(255, 215, 0, 0.5)';
+                ctx.beginPath();
+                ctx.arc(secret.x + 12, secret.y + 12 + sparkle, 15, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Secret gem (diamond shape)
+                ctx.fillStyle = '#9370db';
+                ctx.save();
+                ctx.translate(secret.x + 12, secret.y + 12 + sparkle);
+                ctx.rotate(Math.PI / 4);
+                ctx.fillRect(-8, -8, 16, 16);
+                ctx.restore();
+
+                // Gem shine
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+                ctx.beginPath();
+                ctx.arc(secret.x + 9, secret.y + 9 + sparkle, 3, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Sparkle particles
+                if (animationFrame % 20 === 0) {
+                    createParticles(secret.x + 12, secret.y + 12, '#ffd700', 3, {
+                        spread: 5, gravity: 0.05, life: 0.8, size: { min: 2, max: 5 }, fade: 0.08, shape: 'star'
+                    });
+                }
+            }
+        });
+    }
+
     // Draw power-ups
     powerUps.forEach(powerUp => {
         if (!powerUp.collected) {
@@ -2353,7 +2616,7 @@ function drawGame() {
     // PHASE 3: Draw mini-map
     drawMiniMap();
 
-    ctx.restore(); // Restore from camera + screen shake
+    ctx.restore();
 }
 
 function drawPlayer() {
@@ -2740,15 +3003,15 @@ function drawVictoryScreen() {
 function gameLoop() {
     animationFrame++;
 
-    // Update camera and transitions
-    updateCamera();
-    updateLevelTransition();
-
     if (gameState === 'start') {
         drawStartScreen();
+    } else if (gameState === 'levelSelect') {
+        drawLevelSelectScreen();
     } else if (gameState === 'playing') {
         updatePlayer();
+        updateTutorialHints(); // SPRINT 2: Update tutorial hints
         drawGame();
+        drawTutorialHint(); // SPRINT 2: Draw tutorial hints
     } else if (gameState === 'paused') {
         drawGame();
         drawPauseScreen();
@@ -2758,11 +3021,6 @@ function gameLoop() {
     } else if (gameState === 'victory') {
         drawGame();
         drawVictoryScreen();
-    }
-
-    // Draw level transition overlay on top of everything
-    if (transitionState !== null) {
-        drawLevelTransition();
     }
 
     requestAnimationFrame(gameLoop);
