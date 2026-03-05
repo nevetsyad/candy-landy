@@ -18,15 +18,6 @@ let highScore = 0;
 let currentLevel = 0;
 let animationFrame = 0;
 
-// PHASE 2: Level transition system
-let transitionState = null; // 'loading', 'fadingOut', 'fadingIn', 'panning', 'none'
-let transitionProgress = 0;
-let transitionTargetCameraX = 0;
-let transitionTargetCameraY = 0;
-let transitionDuration = 60; // frames (1 second at 60fps)
-let loadingTimer = 0;
-let loadingCountdown = 3; // seconds
-
 // Safe localStorage wrapper with error handling
 function safeLocalStorage(action, key, value = null) {
     try {
@@ -161,35 +152,6 @@ function playSound(type) {
             gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
             oscillator.start(audioContext.currentTime);
             oscillator.stop(audioContext.currentTime + 0.1);
-            break;
-        case 'combo':
-            // Play ascending notes for combo
-            const comboNotes = [523, 659, 784, 1047, 1319];
-            comboNotes.forEach((freq, i) => {
-                const osc = audioContext.createOscillator();
-                const gain = audioContext.createGain();
-                osc.connect(gain);
-                gain.connect(audioContext.destination);
-                osc.frequency.setValueAtTime(freq, audioContext.currentTime + i * 0.1);
-                gain.gain.setValueAtTime(0.15 * volumeGain, audioContext.currentTime + i * 0.1);
-                gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + i * 0.1 + 0.1);
-                osc.start(audioContext.currentTime + i * 0.1);
-                osc.stop(audioContext.currentTime + i * 0.1 + 0.1);
-            });
-            break;
-        case 'comboSparkle':
-            // Soft sparkle sound
-            const sparkleFreq = 880 + Math.random() * 440;
-            const osc = audioContext.createOscillator();
-            const gain = audioContext.createGain();
-            osc.connect(gain);
-            gain.connect(audioContext.destination);
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(sparkleFreq, audioContext.currentTime);
-            gain.gain.setValueAtTime(0.2 * volumeGain, audioContext.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15);
-            osc.start(audioContext.currentTime);
-            osc.stop(audioContext.currentTime + 0.15);
             break;
         case 'collect':
             oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
@@ -436,14 +398,6 @@ let player = {
     canWallJump: true
 };
 
-// PHASE 2: Enhanced camera system with Lerp
-let cameraX = 0;
-let cameraY = 0;
-let cameraZoom = 1;
-let targetCameraX = 0;
-let targetCameraY = 0;
-let targetCameraZoom = 1;
-
 // PHASE 1: Explicit jump state tracking
 let jumpState = 'grounded'; // 'grounded', 'jumping', 'doubleJump', 'falling', 'wallSliding'
 
@@ -470,30 +424,6 @@ let particles = [];
 
 // Player trail system for visual feedback
 let playerTrail = [];
-
-// Enhanced sparkle particle effect for combos
-function createSparkles(x, y, color, count = 5) {
-    for (let i = 0; i < count; i++) {
-        const angle = (Math.PI * 2 * i) / count;
-        const speed = Math.random() * 4 + 2;
-
-        particles.push({
-            x: x,
-            y: y,
-            vx: Math.cos(angle) * speed,
-            vy: Math.sin(angle) * speed,
-            life: 0.8,
-            maxLife: 0.8,
-            color: color,
-            size: Math.random() * 4 + 2,
-            gravity: 0.05,
-            fade: 0.02,
-            shape: 'star',
-            rotation: Math.random() * Math.PI * 2,
-            rotationSpeed: (Math.random() - 0.5) * 0.5
-        });
-    }
-}
 
 function createParticles(x, y, color, count = 10, options = {}) {
     // Validate inputs
@@ -719,189 +649,6 @@ let screenShake = {
     duration: 0
 };
 
-// PHASE 2: Enhanced camera functions
-function lerp(start, end, factor) {
-    return start + (end - start) * factor;
-}
-
-function updateCamera() {
-    // Smooth camera following (Lerp)
-    // Player is centered at 400, 300 (canvas center)
-    const centerX = 400;
-    const centerY = 300;
-
-    targetCameraX = centerX - player.x - player.width / 2;
-    targetCameraY = centerY - player.y - player.height / 2;
-
-    // Add zoom effect on power-up collection
-    if (cameraZoom > targetCameraZoom) {
-        cameraZoom = lerp(cameraZoom, targetCameraZoom, 0.1);
-    } else {
-        cameraZoom = lerp(cameraZoom, 1, 0.1);
-    }
-
-    // Apply camera to screen shake offset
-    cameraX = lerp(cameraX, targetCameraX, 0.1);
-    cameraY = lerp(cameraY, targetCameraY, 0.1);
-}
-
-function triggerCameraZoom(intensity = 0.2, duration = 15) {
-    targetCameraZoom = intensity;
-    setTimeout(() => {
-        targetCameraZoom = 1;
-    }, duration * 16); // Convert to ms
-}
-
-// Level transition functions
-function startLevelTransition() {
-    if (transitionState !== null) return; // Already transitioning
-
-    transitionState = 'fadingOut';
-    transitionProgress = 0;
-    transitionDuration = 60; // 1 second fade
-}
-
-function updateLevelTransition() {
-    if (transitionState === null) return;
-
-    if (transitionState === 'loading') {
-        loadingTimer++;
-        if (loadingTimer >= 60) {
-            loadingTimer = 0;
-            loadingCountdown--;
-            if (loadingCountdown <= 0) {
-                // Start panning camera to new level
-                const nextLevelIndex = currentLevel + 1;
-                if (nextLevelIndex >= levels.length) {
-                    // Game complete!
-                    transitionState = 'fadingIn';
-                    transitionProgress = 0;
-                } else {
-                    const nextLevelData = levels[nextLevelIndex];
-                    transitionTargetCameraX = nextLevelData.platforms[0].x - 100;
-                    transitionTargetCameraY = nextLevelData.platforms[0].y - 200;
-                    transitionState = 'panning';
-                    transitionProgress = 0;
-                }
-            }
-        }
-    } else if (transitionState === 'fadingOut') {
-        transitionProgress += 1 / transitionDuration;
-        if (transitionProgress >= 1) {
-            transitionProgress = 1;
-            transitionState = 'loading';
-            loadingTimer = 0;
-            loadingCountdown = 3;
-        }
-    } else if (transitionState === 'fadingIn') {
-        transitionProgress += 1 / transitionDuration;
-        if (transitionProgress >= 1) {
-            transitionProgress = 0;
-            transitionState = null;
-            // Go to next level
-            loadLevel(currentLevel + 1);
-        }
-    } else if (transitionState === 'panning') {
-        // Smooth camera pan
-        cameraX = lerp(cameraX, transitionTargetCameraX, 0.05);
-        cameraY = lerp(cameraY, transitionTargetCameraY, 0.05);
-        transitionProgress += 1 / transitionDuration;
-
-        if (transitionProgress >= 1) {
-            transitionProgress = 0;
-            transitionState = 'fadingIn';
-            playSound('levelComplete');
-            triggerScreenShake(8, 10);
-            createConfetti(canvas.width / 2, canvas.height / 2, 40);
-        }
-    }
-}
-
-function drawLevelTransition() {
-    if (transitionState === null) return;
-
-    // Draw game behind the transition
-    if (transitionState === 'loading') {
-        // Loading screen with candy theme
-        const loadingText = `Loading Level ${currentLevel + 2}... ${loadingCountdown}s`;
-
-        // Animated candy background
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        // Floating candies
-        const candyCount = 5;
-        for (let i = 0; i < candyCount; i++) {
-            const candyX = (animationFrame * 0.5 + i * 150) % (canvas.width + 40) - 20;
-            const candyY = 100 + i * 80 + Math.sin(animationFrame * 0.03 + i) * 10;
-            const candySize = 15 + Math.sin(animationFrame * 0.05 + i * 2) * 3;
-
-            // Candy glow
-            ctx.fillStyle = 'rgba(255, 215, 0, 0.3)';
-            ctx.beginPath();
-            ctx.arc(candyX + 15, candyY + 15, candySize, 0, Math.PI * 2);
-            ctx.fill();
-
-            // Candy
-            ctx.fillStyle = '#ffd700';
-            ctx.beginPath();
-            ctx.arc(candyX + 15, candyY + 15, candySize, 0, Math.PI * 2);
-            ctx.fill();
-
-            // Candy shine
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
-            ctx.beginPath();
-            ctx.arc(candyX + 12, candyY + 12, candySize / 3, 0, Math.PI * 2);
-            ctx.fill();
-        }
-
-        // Loading text with animation
-        ctx.fillStyle = '#ff69b4';
-        ctx.font = 'bold 36px Comic Sans MS';
-        ctx.textAlign = 'center';
-        ctx.shadowColor = '#ff1493';
-        ctx.shadowBlur = 20;
-        ctx.fillText('🍬 ' + loadingText + ' 🍬', canvas.width / 2, canvas.height / 2);
-        ctx.shadowBlur = 0;
-
-        // Progress bar
-        const barWidth = 300;
-        const barHeight = 20;
-        const progress = (3 - loadingCountdown) / 3;
-
-        // Bar background
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
-        ctx.fillRect(canvas.width / 2 - barWidth / 2, canvas.height / 2 + 50, barWidth, barHeight);
-
-        // Progress fill
-        ctx.fillStyle = '#00ff00';
-        ctx.fillRect(canvas.width / 2 - barWidth / 2, canvas.height / 2 + 50, barWidth * progress, barHeight);
-
-        // Bar border
-        ctx.strokeStyle = '#ff69b4';
-        ctx.lineWidth = 3;
-        ctx.strokeRect(canvas.width / 2 - barWidth / 2, canvas.height / 2 + 50, barWidth, barHeight);
-    } else if (transitionState === 'fadingOut' || transitionState === 'fadingIn') {
-        // Fade overlay
-        ctx.fillStyle = `rgba(255, 105, 180, ${transitionProgress})`;
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        // Add sparkle effect during fade
-        if (transitionProgress > 0 && transitionProgress < 1) {
-            const sparkleCount = 10;
-            for (let i = 0; i < sparkleCount; i++) {
-                const sparkleX = (animationFrame * 2 + i * 100) % canvas.width;
-                const sparkleY = (animationFrame + i * 50) % canvas.height;
-
-                ctx.fillStyle = `rgba(255, 255, 255, ${0.3 * (1 - Math.abs(transitionProgress - 0.5))})`;
-                ctx.font = '20px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText('✨', sparkleX, sparkleY);
-            }
-        }
-    }
-}
-
 function triggerScreenShake(intensity = SETTINGS.screenShakeIntensity, duration = 10) {
     screenShake.intensity = Math.max(screenShake.intensity, intensity);
     screenShake.duration = Math.max(screenShake.duration, duration);
@@ -1122,14 +869,6 @@ function loadLevel(levelIndex) {
 
     currentLevel = levelIndex;
     currentLevelData = JSON.parse(JSON.stringify(levels[levelIndex]));
-
-    // Reset camera
-    cameraX = 0;
-    cameraY = 0;
-    cameraZoom = 1;
-    targetCameraX = 0;
-    targetCameraY = 0;
-    targetCameraZoom = 1;
 
     // Reset player position
     player.x = 100;
@@ -1563,16 +1302,7 @@ function updatePlayer() {
                 if (combo % 5 === 0) {
                     playSound('combo');
                     triggerScreenShake(2, 5);
-                    // Add sparkle effect at combo milestone
-                    createSparkles(player.x, player.y, '#ffd700', 15);
                 }
-                // Add sparkle sound every 3 combos
-                if (combo % 3 === 0) {
-                    playSound('comboSparkle');
-                }
-                // Add sparkle effect on every candy collection during combo
-                createSparkles(candy.x + 10, candy.y + 10, '#00ffff', 5);
-                createSparkles(candy.x + 10, candy.y + 10, '#ff00ff', 5);
                 comboMultiplier = Math.min(combo, 5);
             } else {
                 combo = 1;
@@ -1615,11 +1345,7 @@ function updatePlayer() {
             player.powerUpTimer = 300; // 5 seconds at 60fps
             playSound('powerup');
             triggerScreenShake(4, 6);
-            triggerCameraZoom(1.3, 15); // Camera zoom effect
-            createExplosion(powerUp.x + 10, powerUp.y + 10, '#00ff00', 25);
-            createParticles(powerUp.x + 10, powerUp.y + 10, '#00ffff', 15);
-            createParticles(powerUp.x + 10, powerUp.y + 10, '#00ff00', 15);
-            createSparkles(powerUp.x + 10, powerUp.y + 10, '#ffffff', 20);
+            createExplosion(powerUp.x + 10, powerUp.y + 10, '#00ff00', 15);
         }
     });
 
@@ -1654,23 +1380,17 @@ function updatePlayer() {
                 triggerScreenShake(5, 8);
 
                 // Create explosion effect at enemy position
-                createExplosion(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, '#ff6600', 35);
+                createExplosion(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, '#ff6600', 25);
 
-                // Create star burst particles for successful stomp (multi-color)
-                const enemyColors = ['#ff6600', '#ff0000', '#ffaa00', '#ffff00'];
-                enemyColors.forEach(color => {
-                    createParticles(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, color, 8, {
-                        spread: 12,
-                        gravity: 0.1,
-                        life: 1.5,
-                        size: { min: 4, max: 10 },
-                        fade: 0.015,
-                        shape: 'star'
-                    });
+                // Create star burst particles for successful stomp
+                createParticles(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, '#ffff00', 15, {
+                    spread: 12,
+                    gravity: 0.1,
+                    life: 1.5,
+                    size: { min: 3, max: 8 },
+                    fade: 0.015,
+                    shape: 'star'
                 });
-
-                // Create small sparkles for extra effect
-                createSparkles(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, '#ffffff', 10);
 
                 // Award points for killing enemy
                 const enemyPoints = 50;
@@ -1736,8 +1456,7 @@ function updatePlayer() {
                     player.vx = 0;
                     player.vy = 0;
                     player.invincible = true;
-                    player.invincibleTimer = 60; // 1 second (60 frames at 60fps)
-                    console.log('✅ Checkpoint respawn: 1-second invincibility activated');
+                    player.invincibleTimer = 120; // 2 seconds
                 }
             }
         }
@@ -1754,8 +1473,8 @@ function updatePlayer() {
         const allCollected = currentLevelData.candies.every(c => c.collected);
 
         if (allCollected) {
-            // Trigger level transition
-            startLevelTransition();
+            playSound('levelComplete');
+            loadLevel(currentLevel + 1);
         }
     }
 
@@ -1786,8 +1505,7 @@ function updatePlayer() {
             player.vx = 0;
             player.vy = 0;
             player.invincible = true;
-            player.invincibleTimer = 60; // 1 second (60 frames at 60fps)
-            console.log('✅ Fall respawn: 1-second invincibility activated');
+            player.invincibleTimer = 120;
         }
     }
 
@@ -2128,11 +1846,8 @@ function drawGame() {
     ctx.textAlign = 'right';
     ctx.fillText('🏆 Best: ' + highScore, canvas.width - 20, 590);
 
-    // Apply camera transform
-    ctx.save();
-    ctx.translate(cameraX * cameraZoom, cameraY * cameraZoom);
-
     // Apply screen shake
+    ctx.save();
     ctx.translate(screenShake.x, screenShake.y);
 
     // Gradient sky background
@@ -2353,7 +2068,7 @@ function drawGame() {
     // PHASE 3: Draw mini-map
     drawMiniMap();
 
-    ctx.restore(); // Restore from camera + screen shake
+    ctx.restore();
 }
 
 function drawPlayer() {
@@ -2740,10 +2455,6 @@ function drawVictoryScreen() {
 function gameLoop() {
     animationFrame++;
 
-    // Update camera and transitions
-    updateCamera();
-    updateLevelTransition();
-
     if (gameState === 'start') {
         drawStartScreen();
     } else if (gameState === 'playing') {
@@ -2758,11 +2469,6 @@ function gameLoop() {
     } else if (gameState === 'victory') {
         drawGame();
         drawVictoryScreen();
-    }
-
-    // Draw level transition overlay on top of everything
-    if (transitionState !== null) {
-        drawLevelTransition();
     }
 
     requestAnimationFrame(gameLoop);

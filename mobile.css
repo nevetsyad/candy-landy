@@ -1,0 +1,371 @@
+/* Mobile Touch Controls and Overlays for Candy Landy */
+
+/* ============================================
+   TAP TO PLAY OVERLAY (iOS Audio Fix)
+   ============================================ */
+#tapToPlayOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fecfef 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    cursor: pointer;
+}
+
+#tapToPlayOverlay.hidden {
+    display: none;
+}
+
+#tapToPlayOverlay .tap-title {
+    font-family: 'Comic Sans MS', cursive, sans-serif;
+    font-size: 3em;
+    color: #ff1493;
+    text-shadow: 3px 3px 6px rgba(0,0,0,0.3);
+    margin-bottom: 20px;
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+#tapToPlayOverlay .tap-icon {
+    font-size: 5em;
+    animation: bounce 1s ease-in-out infinite;
+}
+
+#tapToPlayOverlay .tap-instruction {
+    font-family: 'Comic Sans MS', cursive, sans-serif;
+    font-size: 1.5em;
+    color: #8b4513;
+    margin-top: 20px;
+    background: rgba(255, 255, 255, 0.8);
+    padding: 15px 30px;
+    border-radius: 15px;
+    border: 3px solid #ff69b4;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+@keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-20px); }
+}
+
+/* ============================================
+   LANDSCAPE PROMPT OVERLAY
+   ============================================ */
+#landscapePrompt {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+    color: white;
+}
+
+#landscapePrompt.hidden {
+    display: none;
+}
+
+#landscapePrompt .rotate-icon {
+    font-size: 4em;
+    animation: rotatePhone 2s ease-in-out infinite;
+    margin-bottom: 20px;
+}
+
+#landscapePrompt .rotate-text {
+    font-family: 'Comic Sans MS', cursive, sans-serif;
+    font-size: 1.5em;
+    text-align: center;
+    padding: 0 20px;
+}
+
+@keyframes rotatePhone {
+    0% { transform: rotate(0deg); }
+    50% { transform: rotate(90deg); }
+    100% { transform: rotate(0deg); }
+}
+
+/* ============================================
+   IMPROVED MOBILE TOUCH CONTROLS
+   ============================================ */
+#mobileControls {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 15px 20px 25px 20px;
+    justify-content: space-between;
+    align-items: flex-end;
+    box-sizing: border-box;
+    z-index: 100;
+    background: linear-gradient(transparent, rgba(0,0,0,0.2));
+}
+
+#mobileControls.active {
+    display: flex;
+}
+
+/* D-Pad Container */
+.d-pad-container {
+    display: grid;
+    grid-template-columns: repeat(3, 60px);
+    grid-template-rows: repeat(3, 60px);
+    gap: 5px;
+    touch-action: none;
+}
+
+.d-pad-btn {
+    background: rgba(255, 255, 255, 0.85);
+    border: 3px solid #ff69b4;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: #ff1493;
+    cursor: pointer;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    transition: transform 0.1s, background 0.1s;
+}
+
+.d-pad-btn:active,
+.d-pad-btn.pressed {
+    background: rgba(255, 105, 180, 0.6);
+    transform: scale(0.92);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.d-pad-up { grid-column: 2; grid-row: 1; }
+.d-pad-left { grid-column: 1; grid-row: 2; }
+.d-pad-right { grid-column: 3; grid-row: 2; }
+.d-pad-down { grid-column: 2; grid-row: 3; }
+
+/* D-Pad Center (empty) */
+.d-pad-center {
+    grid-column: 2;
+    grid-row: 2;
+    background: rgba(255, 255, 255, 0.3);
+    border: 2px dashed rgba(255, 105, 180, 0.5);
+    border-radius: 12px;
+}
+
+/* Action Buttons Container */
+.action-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: center;
+}
+
+/* Action Button Base */
+.action-btn {
+    width: 75px;
+    height: 75px;
+    background: rgba(255, 255, 255, 0.9);
+    border: 4px solid #ff69b4;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    color: #ff1493;
+    cursor: pointer;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    box-shadow: 0 5px 10px rgba(0,0,0,0.3);
+    transition: transform 0.1s, background 0.1s;
+}
+
+.action-btn:active,
+.action-btn.pressed {
+    background: rgba(255, 105, 180, 0.6);
+    transform: scale(0.92);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+}
+
+/* Jump Button - Larger and Primary */
+#jumpBtn {
+    width: 85px;
+    height: 85px;
+    font-size: 32px;
+    background: rgba(255, 255, 255, 0.95);
+    border-color: #00ff00;
+    color: #00aa00;
+}
+
+#jumpBtn:active,
+#jumpBtn.pressed {
+    background: rgba(0, 255, 0, 0.4);
+}
+
+/* Dash Button */
+#dashBtn {
+    width: 65px;
+    height: 65px;
+    font-size: 24px;
+    background: rgba(255, 255, 255, 0.85);
+    border-color: #ffd700;
+    color: #ff8800;
+}
+
+#dashBtn:active,
+#dashBtn.pressed {
+    background: rgba(255, 215, 0, 0.4);
+}
+
+/* Button Labels */
+.btn-label {
+    font-family: 'Comic Sans MS', cursive, sans-serif;
+    font-size: 10px;
+    position: absolute;
+    bottom: -18px;
+    left: 50%;
+    transform: translateX(-50%);
+    white-space: nowrap;
+    color: #fff;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+}
+
+.action-btn {
+    position: relative;
+}
+
+/* Responsive adjustments for smaller screens */
+@media (max-width: 480px) {
+    .d-pad-container {
+        grid-template-columns: repeat(3, 50px);
+        grid-template-rows: repeat(3, 50px);
+        gap: 4px;
+    }
+
+    .d-pad-btn {
+        font-size: 20px;
+    }
+
+    .action-btn {
+        width: 65px;
+        height: 65px;
+        font-size: 24px;
+    }
+
+    #jumpBtn {
+        width: 75px;
+        height: 75px;
+        font-size: 28px;
+    }
+
+    #dashBtn {
+        width: 55px;
+        height: 55px;
+        font-size: 20px;
+    }
+
+    #mobileControls {
+        padding: 10px 15px 20px 15px;
+    }
+}
+
+/* Extra small screens */
+@media (max-width: 360px) {
+    .d-pad-container {
+        grid-template-columns: repeat(3, 45px);
+        grid-template-rows: repeat(3, 45px);
+        gap: 3px;
+    }
+
+    .d-pad-btn {
+        font-size: 18px;
+        border-width: 2px;
+    }
+
+    .action-btn {
+        width: 55px;
+        height: 55px;
+        font-size: 20px;
+        border-width: 3px;
+    }
+
+    #jumpBtn {
+        width: 65px;
+        height: 65px;
+        font-size: 24px;
+    }
+
+    #dashBtn {
+        width: 50px;
+        height: 50px;
+        font-size: 18px;
+    }
+}
+
+/* Landscape mode optimization */
+@media (orientation: landscape) and (max-height: 500px) {
+    #mobileControls {
+        padding: 5px 15px 10px 15px;
+    }
+
+    .d-pad-container {
+        grid-template-columns: repeat(3, 45px);
+        grid-template-rows: repeat(3, 45px);
+        gap: 3px;
+    }
+
+    .action-btn {
+        width: 55px;
+        height: 55px;
+        font-size: 22px;
+    }
+
+    #jumpBtn {
+        width: 65px;
+        height: 65px;
+        font-size: 26px;
+    }
+
+    #dashBtn {
+        width: 50px;
+        height: 50px;
+        font-size: 18px;
+    }
+}
+
+/* Touch feedback ripple effect */
+.touch-ripple {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255, 105, 180, 0.4);
+    transform: scale(0);
+    animation: ripple 0.4s ease-out;
+    pointer-events: none;
+}
+
+@keyframes ripple {
+    to {
+        transform: scale(2);
+        opacity: 0;
+    }
+}
+
+/* Visual feedback for active buttons */
+.d-pad-btn.active,
+.action-btn.active {
+    box-shadow: 0 0 15px rgba(255, 105, 180, 0.8), inset 0 0 10px rgba(255, 255, 255, 0.3);
+}
