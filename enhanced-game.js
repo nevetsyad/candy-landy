@@ -1,6 +1,7 @@
 // Enhanced Candy Landy Game - Multiple Levels, Sound Effects, Power-ups, Enemies
-// Version 5 - Critical Fixes + Checkpoints + Timer + Dash + Wall Jump + Mini-map
+// Version 8 - High Score Initial/Logo + Enhanced Victory Screen
 // SPRINT 2 - Level Select + Tutorial Hints + Ground Pound + Secret Collectibles
+// TASK 2 - High Score Initial/Logo + High Score Listings + Credits
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
@@ -890,12 +891,13 @@ const levels = [
         candies: [
             { x: 250, y: 420, collected: false },
             { x: 450, y: 320, collected: false },
-            { x: 650, y: 220, collected: false }
+            { x: 650, y: 220, collected: false },
+            { x: 100, y: 500, collected: false } // Moved to accessible location below starting platform
         ],
         // SPRINT 2: Secret collectibles
         secrets: [
-            { x: 50, y: 520, collected: false, id: 'secret1_1' },
-            { x: 750, y: 150, collected: false, id: 'secret1_2' }
+            { x: 700, y: 500, collected: false, id: 'secret1_1' }, // Moved to accessible bottom right
+            { x: 50, y: 480, collected: false, id: 'secret1_2' }   // Moved to accessible bottom left
         ],
         powerUps: [],
         enemies: [
@@ -935,8 +937,8 @@ const levels = [
         ],
         // SPRINT 2: Secret collectibles
         secrets: [
-            { x: 700, y: 500, collected: false, id: 'secret2_1' },
-            { x: 50, y: 200, collected: false, id: 'secret2_2' }
+            { x: 720, y: 500, collected: false, id: 'secret2_1' }, // Moved to accessible bottom right
+            { x: 80, y: 480, collected: false, id: 'secret2_2' }   // Moved to accessible bottom left
         ],
         powerUps: [
             { x: 280, y: 420, type: POWER_UPS.JUMP, collected: false },
@@ -985,8 +987,8 @@ const levels = [
         ],
         // SPRINT 2: Secret collectibles
         secrets: [
-            { x: 20, y: 320, collected: false, id: 'secret3_1' },
-            { x: 780, y: 420, collected: false, id: 'secret3_2' }
+            { x: 750, y: 500, collected: false, id: 'secret3_1' }, // Moved to accessible bottom right
+            { x: 80, y: 480, collected: false, id: 'secret3_2' }   // Moved to accessible bottom left
         ],
         powerUps: [
             { x: 270, y: 320, type: POWER_UPS.SPEED, collected: false },
@@ -1974,11 +1976,93 @@ function drawStartScreen() {
     ctx.fillText('🍬 Collect all candies to advance', 230, 475);
     ctx.fillText('⚠️ Avoid enemies and don\'t fall!', 230, 505);
 
-    // High score
+    // ==================== HIGH SCORE INITIAL/LOGO ====================
+    // LARGE "H" INITIAL - Task 1: Visually Prominent High Score Logo
+    const hSize = 120;
+    const hX = canvas.width / 2;
+    const hY = 560;
+
+    // Animated rainbow "H" with glow and shadow
+    const rainbowColors = ['#ff0000', '#ff7700', '#ffff00', '#00ff00', '#0077ff', '#7700ff', '#ff00ff'];
+    const colorIndex = Math.floor(animationFrame * 0.08) % rainbowColors.length;
+
+    // Outer glow
+    const glowGradient = ctx.createRadialGradient(hX, hY, 0, hX, hY, 150);
+    glowGradient.addColorStop(0, 'rgba(255, 215, 0, 0.3)');
+    glowGradient.addColorStop(0.5, 'rgba(255, 215, 0, 0.1)');
+    glowGradient.addColorStop(1, 'rgba(255, 215, 0, 0)');
+    ctx.fillStyle = glowGradient;
+    ctx.beginPath();
+    ctx.arc(hX, hY, 150, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Draw the large "H" with rounded corners
+    ctx.strokeStyle = rainbowColors[colorIndex];
+    ctx.lineWidth = 8;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.shadowColor = rainbowColors[colorIndex];
+    ctx.shadowBlur = 20;
+
+    // Left vertical bar of "H"
+    ctx.beginPath();
+    ctx.moveTo(hX - hSize/2, hY - hSize);
+    ctx.lineTo(hX - hSize/2, hY + hSize/2);
+    ctx.stroke();
+
+    // Right vertical bar of "H"
+    ctx.beginPath();
+    ctx.moveTo(hX + hSize/2, hY - hSize);
+    ctx.lineTo(hX + hSize/2, hY + hSize/2);
+    ctx.stroke();
+
+    // Horizontal bar of "H"
+    ctx.beginPath();
+    ctx.moveTo(hX - hSize/2, hY - hSize/4);
+    ctx.lineTo(hX + hSize/2, hY - hSize/4);
+    ctx.moveTo(hX - hSize/2, hY + hSize/4);
+    ctx.lineTo(hX + hSize/2, hY + hSize/4);
+    ctx.stroke();
+
+    ctx.shadowBlur = 0; // Reset shadow
+
+    // Second layer - white border for contrast
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 3;
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+    ctx.shadowBlur = 5;
+
+    // Left vertical bar
+    ctx.beginPath();
+    ctx.moveTo(hX - hSize/2 + 5, hY - hSize + 5);
+    ctx.lineTo(hX - hSize/2 + 5, hY + hSize/2 - 5);
+    ctx.stroke();
+
+    // Right vertical bar
+    ctx.beginPath();
+    ctx.moveTo(hX + hSize/2 - 5, hY - hSize + 5);
+    ctx.lineTo(hX + hSize/2 - 5, hY + hSize/2 - 5);
+    ctx.stroke();
+
+    // Horizontal bar
+    ctx.beginPath();
+    ctx.moveTo(hX - hSize/2 + 5, hY - hSize/4 + 3);
+    ctx.lineTo(hX + hSize/2 - 5, hY - hSize/4 + 3);
+    ctx.moveTo(hX - hSize/2 + 5, hY + hSize/4 - 3);
+    ctx.lineTo(hX + hSize/2 - 5, hY + hSize/4 - 3);
+    ctx.stroke();
+
+    ctx.shadowBlur = 0;
+
+    // Small trophy icon
+    ctx.font = 'bold 18px Arial';
     ctx.textAlign = 'center';
-    ctx.fillStyle = '#ff1493';
-    ctx.font = '20px Comic Sans MS';
-    ctx.fillText('🏆 High Score: ' + highScore, canvas.width / 2, 540);
+    ctx.fillText('🏆', hX, hY - hSize - 20);
+
+    // High score value below the "H"
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+    ctx.font = 'bold 32px Comic Sans MS';
+    ctx.fillText('SCORE: ' + highScore, hX, hY + hSize + 45);
 
     // Animated character
     const bounce = Math.sin(animationFrame * 0.1) * 10;
@@ -2090,17 +2174,72 @@ function drawLevelSelectScreen() {
     ctx.fillStyle = '#333';
     ctx.font = '20px Comic Sans MS';
     ctx.textAlign = 'center';
-    ctx.fillText('Press 1-3 to select level or SPACE to start!', canvas.width / 2, 480);
+    ctx.fillText('Press 1-3 to select level or SPACE to start!', canvas.width / 2, 470);
 
-    // High score
-    ctx.fillStyle = '#ff1493';
-    ctx.font = '18px Comic Sans MS';
-    ctx.fillText('🏆 Total High Score: ' + highScore, canvas.width / 2, 520);
+    // ==================== HIGH SCORE INITIAL/LOGO ====================
+    // LARGE "H" INITIAL - Task 1: Visually Prominent High Score Logo
+    const hSize = 100;
+    const hX = canvas.width / 2;
+    const hY = 505;
+
+    // Animated rainbow "H" with glow and shadow
+    const rainbowColors = ['#ff0000', '#ff7700', '#ffff00', '#00ff00', '#0077ff', '#7700ff', '#ff00ff'];
+    const colorIndex = Math.floor(animationFrame * 0.08) % rainbowColors.length;
+
+    // Outer glow
+    const glowGradient = ctx.createRadialGradient(hX, hY, 0, hX, hY, 120);
+    glowGradient.addColorStop(0, 'rgba(255, 215, 0, 0.3)');
+    glowGradient.addColorStop(0.5, 'rgba(255, 215, 0, 0.1)');
+    glowGradient.addColorStop(1, 'rgba(255, 215, 0, 0)');
+    ctx.fillStyle = glowGradient;
+    ctx.beginPath();
+    ctx.arc(hX, hY, 120, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Draw the large "H" with rounded corners
+    ctx.strokeStyle = rainbowColors[colorIndex];
+    ctx.lineWidth = 6;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.shadowColor = rainbowColors[colorIndex];
+    ctx.shadowBlur = 15;
+
+    // Left vertical bar of "H"
+    ctx.beginPath();
+    ctx.moveTo(hX - hSize/2, hY - hSize);
+    ctx.lineTo(hX - hSize/2, hY + hSize/2);
+    ctx.stroke();
+
+    // Right vertical bar of "H"
+    ctx.beginPath();
+    ctx.moveTo(hX + hSize/2, hY - hSize);
+    ctx.lineTo(hX + hSize/2, hY + hSize/2);
+    ctx.stroke();
+
+    // Horizontal bar of "H"
+    ctx.beginPath();
+    ctx.moveTo(hX - hSize/2, hY - hSize/4);
+    ctx.lineTo(hX + hSize/2, hY - hSize/4);
+    ctx.moveTo(hX - hSize/2, hY + hSize/4);
+    ctx.lineTo(hX + hSize/2, hY + hSize/4);
+    ctx.stroke();
+
+    ctx.shadowBlur = 0; // Reset shadow
+
+    // Small trophy icon
+    ctx.font = 'bold 16px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('🏆', hX, hY - hSize - 15);
+
+    // High score value below the "H"
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+    ctx.font = 'bold 28px Comic Sans MS';
+    ctx.fillText('SCORE: ' + highScore, hX, hY + hSize + 38);
 
     // Back instruction
     ctx.fillStyle = '#666';
-    ctx.font = '16px Comic Sans MS';
-    ctx.fillText('ESC to return', canvas.width / 2, 560);
+    ctx.font = '14px Comic Sans MS';
+    ctx.fillText('ESC to return', canvas.width / 2, 555);
 }
 
 function drawCloud(x, y, size) {
@@ -2340,11 +2479,27 @@ function drawHUD() {
     ctx.font = '12px Comic Sans MS';
     ctx.fillText('🔊 ' + Math.round(SETTINGS.volume * 100) + '% (0-5)', canvas.width - 65, 72);
 
-    // High score
+    // ==================== HIGH SCORE BRANDING ====================
+    // Prominent high score display at bottom right
+    ctx.fillStyle = 'rgba(255, 215, 0, 0.9)';
+    ctx.beginPath();
+    ctx.roundRect(canvas.width - 170, canvas.height - 45, 160, 35, 8);
+    ctx.fill();
+    
+    ctx.strokeStyle = '#ff1493';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    
+    // High score label
     ctx.fillStyle = '#ff1493';
-    ctx.font = '16px Comic Sans MS';
-    ctx.textAlign = 'right';
-    ctx.fillText('🏆 Best: ' + highScore, canvas.width - 20, 590);
+    ctx.font = 'bold 12px Comic Sans MS';
+    ctx.textAlign = 'center';
+    ctx.fillText('★ HIGH SCORE ★', canvas.width - 90, canvas.height - 32);
+    
+    // High score value
+    ctx.fillStyle = '#333';
+    ctx.font = 'bold 14px Comic Sans MS';
+    ctx.fillText('🏆 ' + highScore, canvas.width - 90, canvas.height - 15);
 }
 
 function drawGame() {
@@ -2886,38 +3041,66 @@ function drawGameOverScreen() {
     ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+    // ==================== HIGH SCORE BRANDING ====================
+    // High score display at top
+    const rainbowColors = ['#ff0000', '#ff7700', '#ffff00', '#00ff00', '#0077ff', '#7700ff', '#ff00ff'];
+    const colorIndex = Math.floor(animationFrame * 0.05) % rainbowColors.length;
+    
+    ctx.fillStyle = 'rgba(255, 215, 0, 0.9)';
+    ctx.beginPath();
+    ctx.roundRect(canvas.width / 2 - 100, 40, 200, 40, 10);
+    ctx.fill();
+    ctx.strokeStyle = rainbowColors[colorIndex];
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    
+    ctx.textAlign = 'center';
+    ctx.fillStyle = rainbowColors[colorIndex];
+    ctx.font = 'bold 12px Comic Sans MS';
+    ctx.fillText('★ HIGH SCORE ★', canvas.width / 2, 55);
+    
+    ctx.fillStyle = '#333';
+    ctx.font = 'bold 16px Comic Sans MS';
+    ctx.fillText('🏆 ' + highScore, canvas.width / 2, 73);
+
     ctx.fillStyle = '#ff4444';
     ctx.font = 'bold 56px Comic Sans MS';
     ctx.textAlign = 'center';
     ctx.shadowColor = '#ff0000';
     ctx.shadowBlur = 20;
-    ctx.fillText('💀 GAME OVER', canvas.width / 2, 200);
+    ctx.fillText('💀 GAME OVER', canvas.width / 2, 180);
     ctx.shadowBlur = 0;
 
     // Final score
     ctx.fillStyle = '#fff';
     ctx.font = '32px Comic Sans MS';
-    ctx.fillText('Score: ' + score, canvas.width / 2, 280);
+    ctx.fillText('Score: ' + score, canvas.width / 2, 250);
 
     // Combo stats
     ctx.fillStyle = '#ffd700';
     ctx.font = '24px Comic Sans MS';
-    ctx.fillText('🔥 Max Combo: ' + combo + 'x', canvas.width / 2, 320);
+    ctx.fillText('🔥 Max Combo: ' + combo + 'x', canvas.width / 2, 290);
 
     if (timeBonus > 0) {
-        ctx.fillText('⏱️ Time Bonus: ' + timeBonus, canvas.width / 2, 350);
+        ctx.fillText('⏱️ Time Bonus: ' + timeBonus, canvas.width / 2, 320);
     }
 
     // High score message
-    if (score >= highScore) {
-        ctx.fillStyle = '#ffd700';
-        ctx.fillText('🎉 NEW HIGH SCORE! 🎉', canvas.width / 2, 400);
+    if (score >= highScore && score > 0) {
+        ctx.fillStyle = '#00ff00';
+        ctx.font = 'bold 26px Comic Sans MS';
+        const pulseScale = 1 + Math.sin(animationFrame * 0.15) * 0.1;
+        ctx.save();
+        ctx.translate(canvas.width / 2, 370);
+        ctx.scale(pulseScale, pulseScale);
+        ctx.fillText('🎉 NEW HIGH SCORE! 🎉', 0, 0);
+        ctx.restore();
     }
 
     // Restart instruction
     ctx.fillStyle = '#fff';
     ctx.font = '24px Comic Sans MS';
-    ctx.fillText('Press R to Restart', canvas.width / 2, 460);
+    ctx.fillText('Press R to Restart', canvas.width / 2, 430);
 
     // Volume indicator
     ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
@@ -2951,44 +3134,216 @@ function drawVictoryScreen() {
     updateParticles();
     drawParticles();
 
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     // Victory glow effect
     const glowSize = 50 + Math.sin(animationFrame * 0.05) * 10;
-    const glowGradient = ctx.createRadialGradient(canvas.width / 2, 150, 0, canvas.width / 2, 150, glowSize);
+    const glowGradient = ctx.createRadialGradient(canvas.width / 2, 100, 0, canvas.width / 2, 100, glowSize);
     glowGradient.addColorStop(0, 'rgba(255, 215, 0, 0.8)');
     glowGradient.addColorStop(1, 'rgba(255, 215, 0, 0)');
     ctx.fillStyle = glowGradient;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+    // ==================== HIGH SCORE INITIAL/LOGO ====================
+    // TASK 1: EXTRA LARGE "H" INITIAL - Visually Prominent High Score Logo
+    const hSize = 180;
+    const hX = canvas.width / 2;
+    const hY = 50;
+
+    // Animated rainbow "H" with glow and shadow
+    const rainbowColors = ['#ff0000', '#ff7700', '#ffff00', '#00ff00', '#0077ff', '#7700ff', '#ff00ff'];
+    const colorIndex = Math.floor(animationFrame * 0.08) % rainbowColors.length;
+
+    // Multiple layers of glow for dramatic effect
+    for (let layer = 3; layer >= 0; layer--) {
+        const glowGradient = ctx.createRadialGradient(hX, hY, 0, hX, hY, hSize + layer * 50);
+        const glowAlpha = 0.4 - (layer * 0.1);
+        glowGradient.addColorStop(0, 'rgba(255, 215, 0, ' + glowAlpha + ')');
+        glowGradient.addColorStop(0.5, 'rgba(255, 215, 0, 0)');
+        glowGradient.addColorStop(1, 'rgba(255, 215, 0, 0)');
+        ctx.fillStyle = glowGradient;
+        ctx.beginPath();
+        ctx.arc(hX, hY, hSize + layer * 50, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    // Draw the LARGE "H" with rounded corners
+    ctx.strokeStyle = rainbowColors[colorIndex];
+    ctx.lineWidth = 10;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.shadowColor = rainbowColors[colorIndex];
+    ctx.shadowBlur = 25;
+
+    // Left vertical bar of "H"
+    ctx.beginPath();
+    ctx.moveTo(hX - hSize/2, hY - hSize);
+    ctx.lineTo(hX - hSize/2, hY + hSize/2);
+    ctx.stroke();
+
+    // Right vertical bar of "H"
+    ctx.beginPath();
+    ctx.moveTo(hX + hSize/2, hY - hSize);
+    ctx.lineTo(hX + hSize/2, hY + hSize/2);
+    ctx.stroke();
+
+    // Horizontal bar of "H"
+    ctx.beginPath();
+    ctx.moveTo(hX - hSize/2, hY - hSize/4);
+    ctx.lineTo(hX + hSize/2, hY - hSize/4);
+    ctx.moveTo(hX - hSize/2, hY + hSize/4);
+    ctx.lineTo(hX + hSize/2, hY + hSize/4);
+    ctx.stroke();
+
+    ctx.shadowBlur = 0; // Reset shadow
+
+    // White border for contrast
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 3;
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
+    ctx.shadowBlur = 8;
+
+    // Left vertical bar border
+    ctx.beginPath();
+    ctx.moveTo(hX - hSize/2 + 8, hY - hSize + 8);
+    ctx.lineTo(hX - hSize/2 + 8, hY + hSize/2 - 8);
+    ctx.stroke();
+
+    // Right vertical bar border
+    ctx.beginPath();
+    ctx.moveTo(hX + hSize/2 - 8, hY - hSize + 8);
+    ctx.lineTo(hX + hSize/2 - 8, hY + hSize/2 - 8);
+    ctx.stroke();
+
+    // Horizontal bar border
+    ctx.beginPath();
+    ctx.moveTo(hX - hSize/2 + 8, hY - hSize/4 + 5);
+    ctx.lineTo(hX + hSize/2 - 8, hY - hSize/4 + 5);
+    ctx.moveTo(hX - hSize/2 + 8, hY + hSize/4 - 5);
+    ctx.lineTo(hX + hSize/2 - 8, hY + hSize/4 - 5);
+    ctx.stroke();
+
+    ctx.shadowBlur = 0;
+
+    // Trophy icons on either side
+    ctx.font = 'bold 30px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('🏆', hX - 130, 55);
+    ctx.fillText('🏆', hX + 130, 55);
+
+    // ==================== MAIN VICTORY HEADER ====================
     ctx.fillStyle = '#ffd700';
-    ctx.font = 'bold 56px Comic Sans MS';
+    ctx.font = 'bold 48px Comic Sans MS';
     ctx.textAlign = 'center';
     ctx.shadowColor = '#ffff00';
     ctx.shadowBlur = 20;
-    ctx.fillText('🎊 YOU WIN! 🎊', canvas.width / 2, 200);
+    ctx.fillText('🎊 VICTORY! 🎊', canvas.width / 2, 110);
     ctx.shadowBlur = 0;
 
+    // ==================== HIGH SCORE LISTINGS PANEL ====================
+    // Draw a semi-transparent panel for high score info
+    const panelX = 150;
+    const panelY = 130;
+    const panelWidth = canvas.width - 300;
+    const panelHeight = 280;
+    
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+    ctx.strokeStyle = '#ffd700';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.roundRect(panelX, panelY, panelWidth, panelHeight, 15);
+    ctx.fill();
+    ctx.stroke();
+
+    // Section header: SCORE SUMMARY
+    ctx.fillStyle = '#ffd700';
+    ctx.font = 'bold 22px Comic Sans MS';
+    ctx.fillText('━━━ SCORE SUMMARY ━━━', canvas.width / 2, panelY + 30);
+
+    // Current Score
     ctx.fillStyle = '#fff';
-    ctx.font = '28px Comic Sans MS';
-    ctx.fillText('Final Score: ' + score, canvas.width / 2, 280);
+    ctx.font = 'bold 26px Comic Sans MS';
+    ctx.fillText('Final Score: ' + score, canvas.width / 2, panelY + 65);
 
-    // Show combo stats if achieved
-    if (combo > 0) {
-        ctx.fillStyle = '#00ff00';
-        ctx.font = '24px Comic Sans MS';
-        ctx.fillText('Best Combo: ' + combo + 'x', canvas.width / 2, 320);
-    }
-
-    if (score >= highScore) {
-        ctx.fillStyle = '#ffd700';
-        ctx.fillText('🏆 NEW HIGH SCORE! 🏆', canvas.width / 2, 360);
-    }
-
-    ctx.fillStyle = '#fff';
+    // High Score (Best)
+    ctx.fillStyle = '#ff69b4';
     ctx.font = '24px Comic Sans MS';
-    ctx.fillText('Press R to Play Again', canvas.width / 2, 420);
+    ctx.fillText('🏆 Best Score: ' + highScore, canvas.width / 2, panelY + 100);
+
+    // New high score celebration
+    if (score >= highScore && score > 0) {
+        ctx.fillStyle = '#00ff00';
+        ctx.font = 'bold 20px Comic Sans MS';
+        const pulseScale = 1 + Math.sin(animationFrame * 0.15) * 0.1;
+        ctx.save();
+        ctx.translate(canvas.width / 2, panelY + 125);
+        ctx.scale(pulseScale, pulseScale);
+        ctx.fillText('🌟 NEW RECORD! 🌟', 0, 0);
+        ctx.restore();
+    }
+
+    // Section header: ACHIEVEMENTS
+    ctx.fillStyle = '#ffd700';
+    ctx.font = 'bold 22px Comic Sans MS';
+    ctx.fillText('━━━ ACHIEVEMENTS ━━━', canvas.width / 2, panelY + 160);
+
+    // Calculate achievements
+    const totalSecretsFound = levelProgress.secretsFound.reduce((a, b) => a + b, 0);
+    const totalSecretsPossible = levelProgress.totalSecrets.reduce((a, b) => a + b, 0);
+    const levelsCompleted = levelProgress.unlocked.filter(u => u).length;
+    const allLevelsComplete = levelsCompleted >= 3;
+    const allSecretsFound = totalSecretsFound >= totalSecretsPossible;
+    const perfectRun = allLevelsComplete && allSecretsFound;
+
+    // Display achievements with icons
+    ctx.font = '18px Comic Sans MS';
+    ctx.textAlign = 'center';
+    
+    // Levels completed
+    ctx.fillStyle = allLevelsComplete ? '#00ff00' : '#ffaa00';
+    ctx.fillText((allLevelsComplete ? '✅' : '🔶') + ' Levels Completed: ' + levelsCompleted + '/3', canvas.width / 2, panelY + 190);
+
+    // Secrets found
+    ctx.fillStyle = allSecretsFound ? '#00ff00' : '#ffaa00';
+    ctx.fillText((allSecretsFound ? '💎' : '💠') + ' Secrets Found: ' + totalSecretsFound + '/' + totalSecretsPossible, canvas.width / 2, panelY + 215);
+
+    // Best combo
+    if (combo > 0) {
+        ctx.fillStyle = combo >= 10 ? '#00ff00' : '#ff69b4';
+        ctx.fillText('🔥 Best Combo: ' + combo + 'x' + (combo >= 10 ? ' 🔥' : ''), canvas.width / 2, panelY + 240);
+    }
+
+    // Perfect run badge
+    if (perfectRun) {
+        ctx.fillStyle = '#ffd700';
+        ctx.font = 'bold 20px Comic Sans MS';
+        ctx.fillText('👑 PERFECT RUN! 👑', canvas.width / 2, panelY + 268);
+    }
+
+    // ==================== CREDITS SECTION ====================
+    ctx.fillStyle = 'rgba(255, 215, 0, 0.3)';
+    ctx.fillRect(panelX, panelY + panelHeight + 10, panelWidth, 60);
+    ctx.strokeStyle = '#ffd700';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(panelX, panelY + panelHeight + 10, panelWidth, 60);
+
+    ctx.fillStyle = '#ffd700';
+    ctx.font = 'bold 16px Comic Sans MS';
+    ctx.fillText('━━━ CREDITS ━━━', canvas.width / 2, panelY + panelHeight + 30);
+
+    ctx.fillStyle = '#fff';
+    ctx.font = '14px Comic Sans MS';
+    ctx.fillText('Candy Landy - A Sweet Platformer Adventure', canvas.width / 2, panelY + panelHeight + 50);
+    ctx.fillText('Thanks for playing! 🍭', canvas.width / 2, panelY + panelHeight + 68);
+
+    // ==================== PLAY AGAIN PROMPT ====================
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 24px Comic Sans MS';
+    ctx.textAlign = 'center';
+    const promptPulse = 0.8 + Math.sin(animationFrame * 0.1) * 0.2;
+    ctx.fillStyle = `rgba(255, 255, 255, ${promptPulse})`;
+    ctx.fillText('Press R to Play Again', canvas.width / 2, canvas.height - 40);
 
     // Volume indicator
     ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
