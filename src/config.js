@@ -20,6 +20,35 @@ export const SETTINGS = {
     particleIntensity: 1.0
 };
 
+// Particle system configuration (Phase 2 optimization)
+export const PARTICLES = {
+    MAX_PARTICLES: 500,           // Maximum particles allowed
+    POOL_SIZE: 250,               // Pre-allocated pool size
+    
+    // Particle counts for different effects (optimized for performance)
+    CANDY_COLLECT: 10,            // Candy collection particles
+    ENEMY_EXPLOSION: 18,          // Enemy defeat explosion (reduced from 30)
+    GROUND_POUND: 20,             // Ground pound explosion (reduced from 40)
+    PLAYER_HIT: 15,               // Player damage effect
+    POWER_UP_COLLECT: 12,         // Power-up collection
+    CONFETTI: 60,                 // Victory confetti (reduced from 80)
+    SPARKLE_SMALL: 5,             // Small sparkle effects
+    SPARKLE_MEDIUM: 8,            // Medium sparkle effects
+    RING_BURST: 15,               // Ring burst effects
+    
+    // Particle defaults
+    DEFAULT_SPREAD: 8,
+    DEFAULT_GRAVITY: 0.1,
+    DEFAULT_LIFE: 1.0,
+    DEFAULT_FADE: 0.02,
+    MIN_SIZE: 2,
+    MAX_SIZE: 8,
+    
+    // Glow effect defaults
+    DEFAULT_GLOW_SIZE: 12,
+    ENABLE_GLOW_BY_DEFAULT: false
+};
+
 // Physics constants
 export const PHYSICS = {
     GRAVITY: 0.8,

@@ -7,7 +7,9 @@ import {
     SETTINGS, 
     POWER_UPS, 
     CANVAS, 
-    GROUND_POUND 
+    GROUND_POUND,
+    PARTICLES,
+    HINT_DURATION
 } from './config.js';
 import { AudioManager, audioManager } from './audio.js';
 import { ParticleSystem, particleSystem } from './particles.js';
@@ -91,6 +93,9 @@ export class Game {
         this.currentLevelData = null;
         this.enemies = [];
         this.powerUps = [];
+
+        // Power-up cooldown (to prevent rapid re-collection)
+        this.powerUpCooldown = 0;
 
         // Initialize managers
         this.ui = new UIManager(this.canvas, this.ctx);
@@ -270,7 +275,7 @@ export class Game {
             audioManager.stopBackgroundMusic();
             audioManager.playSound('levelComplete');
             this.ui.triggerScreenShake('explosion');
-            particleSystem.createConfetti(this.canvas.width / 2, this.canvas.height / 2, 80);
+            particleSystem.createConfetti(this.canvas.width / 2, this.canvas.height / 2, PARTICLES.CONFETTI);
             
             // Unlock game complete achievement
             this.ui.achievements.unlock('gameComplete');
@@ -311,6 +316,9 @@ export class Game {
         // Copy power-ups
         this.powerUps = [...level.powerUps];
 
+        // Reset power-up cooldown
+        this.powerUpCooldown = 0;
+
         // Reset ground pound
         this.groundPound.active = false;
         this.groundPound.cooldown = 0;
@@ -330,7 +338,7 @@ export class Game {
         this.ui.achievements.unlock('firstGroundPound');
         
         audioManager.playSound('groundPound');
-        particleSystem.createExplosion(player.x + player.width/2, player.y + player.height, '#ff8800', 15, {
+        particleSystem.createExplosion(player.x + player.width/2, player.y + player.height, '#ff8800', PARTICLES.GROUND_POUND, {
             spread: 8, gravity: 0.2, life: 1.0, size: { min: 4, max: 10 }, fade: 0.12, 
             glow: true, glowSize: 12
         });
@@ -388,6 +396,11 @@ export class Game {
             this.groundPound.cooldown--;
         }
 
+        // Update power-up cooldown
+        if (this.powerUpCooldown > 0) {
+            this.powerUpCooldown--;
+        }
+
         // Reset ground pound ability when grounded
         if (player.grounded) {
             this.groundPound.canGroundPound = true;
@@ -410,6 +423,11 @@ export class Game {
         // Create invincibility aura particles
         if (player.invincible && this.animationFrame % 3 === 0) {
             particleSystem.createInvincibilityAura(player.x, player.y, player.width, player.height);
+        }
+        
+        // Create power-up aura for active power-ups (Phase 4 UX improvement)
+        if (player.powerUp && this.animationFrame % 4 === 0) {
+            particleSystem.createPowerUpAura(player.x, player.y, player.width, player.height, player.powerUp);
         }
         
         // Create dash trail
@@ -460,6 +478,11 @@ export class Game {
                 this.comboMultiplier = 1;
             }
         }
+
+        // If timer has expired and combo is 0, set it to 1 (fresh combo start)
+        if (this.combo === 0 && this.comboTimer === 0) {
+            this.combo = 1;
+        }
         
         // Track max combo for achievements
         if (this.combo > this.maxCombo) {
@@ -483,14 +506,14 @@ export class Game {
         audioManager.playSound('enemyHit');
         this.ui.triggerScreenShake('explosion');
 
-        // Enhanced explosion effect
-        particleSystem.createExplosion(player.x + player.width/2, player.y + player.height, '#ff4400', 40, {
+        // Enhanced explosion effect (optimized particle count: 40 → 20)
+        particleSystem.createExplosion(player.x + player.width/2, player.y + player.height, '#ff4400', 20, {
             spread: 12, gravity: 0.25, life: 1.2, size: { min: 5, max: 12 }, 
             fade: 0.02, glow: true, glowSize: 15
         });
         
-        // Ring burst
-        particleSystem.createRingBurst(player.x + player.width/2, player.y + player.height, '#ff8800', 20);
+        // Ring burst (optimized: 20 → 12)
+        particleSystem.createRingBurst(player.x + player.width/2, player.y + player.height, '#ff8800', 12);
 
         // Damage enemies in radius
         for (let i = this.enemies.length - 1; i >= 0; i--) {
@@ -500,7 +523,7 @@ export class Game {
             const distance = Math.sqrt(dx * dx + dy * dy);
 
             if (distance < this.groundPound.radius) {
-                particleSystem.createExplosion(enemy.x + enemy.width/2, enemy.y + enemy.height/2, '#ff6600', 25, {
+                particleSystem.createExplosion(enemy.x + enemy.width/2, enemy.y + enemy.height/2, '#ff6600', PARTICLES.ENEMY_EXPLOSION, {
                     glow: true, glowSize: 12
                 });
                 this.score += 75;
@@ -541,7 +564,7 @@ export class Game {
             this.ui.triggerScreenShake('hit');
             
             // Enhanced hit effect
-            particleSystem.createExplosion(player.x + player.width/2, player.y + player.height/2, '#ff0000', 20, {
+            particleSystem.createExplosion(player.x + player.width/2, player.y + player.height/2, '#ff0000', PARTICLES.PLAYER_HIT, {
                 spread: 8, gravity: 0.15, life: 0.8, glow: true, glowSize: 10
             });
             
@@ -555,8 +578,11 @@ export class Game {
      * Check all collisions with enhanced effects
      */
     checkCollisions() {
+        if (!this.currentLevelData) return;
+
         // Collect checkpoints
-        this.currentLevelData.checkpoints.forEach(cp => {
+        if (this.currentLevelData.checkpoints) {
+            this.currentLevelData.checkpoints.forEach(cp => {
             if (!cp.collected &&
                 player.x < cp.x + 30 && player.x + player.width > cp.x &&
                 player.y < cp.y + 30 && player.y + player.height > cp.y) {
@@ -569,10 +595,12 @@ export class Game {
                 particleSystem.createPowerUpEffect(cp.x + 15, cp.y + 15, '#00ff00');
                 this.ui.triggerScreenShake('medium');
             }
-        });
+            });
+        }
 
         // Collect candies with enhanced effects
-        this.currentLevelData.candies.forEach((candy, index) => {
+        if (this.currentLevelData.candies) {
+            this.currentLevelData.candies.forEach((candy, index) => {
             if (!candy.collected &&
                 player.x < candy.x + 20 &&
                 player.x + player.width > candy.x &&
@@ -614,19 +642,20 @@ export class Game {
                 if (this.combo >= 3) {
                     this.timeBonus += this.combo * 5;
                     this.score += this.timeBonus;
-                    particleSystem.createSparkles(candy.x + 10, candy.y + 10, '#00ff00', 5);
+                    particleSystem.createSparkles(candy.x + 10, candy.y + 10, '#00ff00', PARTICLES.SPARKLE_SMALL);
                 }
 
                 audioManager.playSound('collect');
                 this.ui.triggerScreenShake('collect');
                 
                 // Enhanced candy collection effect
-                particleSystem.createSparkles(candy.x + 10, candy.y + 10, '#ffd700', 8);
+                particleSystem.createSparkles(candy.x + 10, candy.y + 10, '#ffd700', PARTICLES.SPARKLE_MEDIUM);
             }
-        });
+            });
+        }
 
         // Collect secrets with enhanced effects
-        if (this.currentLevelData.secrets) {
+        if (this.currentLevelData.secrets && this.currentLevelData.secrets.length > 0) {
             this.currentLevelData.secrets.forEach((secret, index) => {
                 if (!secret.collected &&
                     player.x < secret.x + 25 &&
@@ -656,6 +685,12 @@ export class Game {
 
         // Collect power-ups with enhanced effects
         this.powerUps.forEach((powerUp, index) => {
+            // Check for power-up cooldown first
+            if (this.powerUpCooldown > 0) {
+                this.powerUpCooldown--;
+                return;
+            }
+
             if (!powerUp.collected &&
                 player.x < powerUp.x + 20 &&
                 player.x + player.width > powerUp.x &&
@@ -665,8 +700,19 @@ export class Game {
                 powerUp.collected = true;
                 player.powerUp = powerUp.type;
                 player.powerUpTimer = 300;
+
+                // Set 2-second cooldown (120 frames at 60fps) to prevent rapid re-collection
+                this.powerUpCooldown = 120;
+
                 audioManager.playSound('powerup');
                 this.ui.triggerScreenShake('medium');
+                
+                // Show power-up tutorial hint (Phase 4 UX improvement)
+                if (!this.ui.tutorialHints.powerUp.shown) {
+                    this.ui.tutorialHints.powerUp.shown = true;
+                    this.ui.activeHint = this.ui.tutorialHints.powerUp.text;
+                    this.ui.hintTimer = HINT_DURATION;
+                }
                 
                 // Enhanced power-up collection effect
                 let powerUpColor = '#00ffff';
@@ -704,12 +750,13 @@ export class Game {
                     this.ui.achievements.unlock('firstStomp');
                     this.ui.achievements.stats.totalEnemies++;
 
-                    // Enhanced explosion
-                    particleSystem.createExplosion(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, '#ff6600', 30, {
+                    // Enhanced explosion (optimized particle count: 30 → 18)
+                    particleSystem.createExplosion(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, '#ff6600', 18, {
                         spread: 12, gravity: 0.15, life: 1.2, size: { min: 4, max: 10 },
                         fade: 0.015, glow: true, glowSize: 14
                     });
-                    particleSystem.createSparkles(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, '#ffd700', 10);
+                    // Optimized sparkles: 10 → 6
+                    particleSystem.createSparkles(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, '#ffd700', 6);
 
                     this.score += 50;
 
@@ -740,7 +787,7 @@ export class Game {
                     this.ui.triggerScreenShake('medium');
                     
                     // Shield break effect
-                    particleSystem.createRingBurst(player.x + player.width/2, player.y + player.height/2, '#00ff00', 15);
+                    particleSystem.createRingBurst(player.x + player.width/2, player.y + player.height/2, '#00ff00', PARTICLES.RING_BURST);
                 } else {
                     this.handlePlayerDeath();
                 }
@@ -945,6 +992,8 @@ export class Game {
      * Draw disappearing platforms with enhanced visuals
      */
     drawDisappearingPlatforms() {
+        if (!this.currentLevelData || !this.currentLevelData.disappearingPlatforms) return;
+        
         this.currentLevelData.disappearingPlatforms.forEach(platform => {
             if (platform.visible) {
                 const fadeProgress = platform.timer / platform.cycleTime;
@@ -1067,7 +1116,7 @@ export class Game {
      * Draw secrets with enhanced glow effects
      */
     drawSecrets() {
-        if (!this.currentLevelData.secrets) return;
+        if (!this.currentLevelData || !this.currentLevelData.secrets) return;
 
         this.currentLevelData.secrets.forEach((secret, index) => {
             if (!secret.collected) {

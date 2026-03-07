@@ -656,7 +656,8 @@ export class UIManager {
             checkpoint: { shown: false, text: "Collect checkpoints to heal and respawn there!", trigger: 'firstCheckpointNearby' },
             dash: { shown: false, text: "Press SHIFT while grounded to DASH (invincible)!", trigger: 'firstDashAvailable' },
             groundPound: { shown: false, text: "Press DOWN + JUMP in the air for GROUND POUND!", trigger: 'firstAirborne' },
-            achievements: { shown: false, text: "Press A to view your achievements!", trigger: 'firstAchievement' }
+            achievements: { shown: false, text: "Press A to view your achievements!", trigger: 'firstAchievement' },
+            powerUp: { shown: false, text: "Collect power-ups for special abilities! Watch the aura!", trigger: 'firstPowerUp' }
         };
         this.activeHint = null;
         this.hintTimer = 0;
