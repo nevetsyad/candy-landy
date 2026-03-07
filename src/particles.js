@@ -590,6 +590,56 @@ export class ParticleSystem {
     }
     
     /**
+     * Create power-up aura effect for active power-ups
+     * Provides visual feedback when a power-up is active
+     * 
+     * @param {number} x - Player X position
+     * @param {number} y - Player Y position
+     * @param {number} width - Player width
+     * @param {number} height - Player height
+     * @param {string} powerUpType - Type of active power-up
+     */
+    createPowerUpAura(x, y, width, height, powerUpType) {
+        // Define power-up specific colors and effects
+        const powerUpConfigs = {
+            speed: { color: '#ffff00', glowColor: '#ffd700', particleCount: 3 },
+            jump: { color: '#00ffff', glowColor: '#00ccff', particleCount: 4 },
+            shield: { color: '#00ff00', glowColor: '#00cc00', particleCount: 5 },
+            double: { color: '#ff00ff', glowColor: '#cc00cc', particleCount: 4 },
+            dash: { color: '#ff8800', glowColor: '#ff6600', particleCount: 3 }
+        };
+        
+        const config = powerUpConfigs[powerUpType] || powerUpConfigs.speed;
+        const centerX = x + width / 2;
+        const centerY = y + height / 2;
+        
+        // Create orbiting particles around player
+        for (let i = 0; i < config.particleCount; i++) {
+            const angle = (Date.now() * 0.003 + i * Math.PI * 2 / config.particleCount);
+            const radius = 30 + Math.sin(Date.now() * 0.005 + i) * 5;
+            
+            const px = centerX + Math.cos(angle) * radius;
+            const py = centerY + Math.sin(angle) * radius;
+            
+            this.particles.push(new Particle(px, py, config.color, {
+                vx: 0,
+                vy: -0.5,
+                life: 0.4,
+                maxLife: 0.4,
+                size: 3,
+                gravity: 0,
+                fade: 0.04,
+                shape: 'circle',
+                glow: true,
+                glowColor: config.glowColor,
+                glowSize: 10,
+                shrink: true,
+                shrinkRate: 0.95
+            }));
+        }
+    }
+    
+    /**
      * Create sparkle effect for collectibles
      */
     createSparkles(x, y, color, count = 8) {

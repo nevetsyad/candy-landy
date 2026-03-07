@@ -8,7 +8,8 @@ import {
     POWER_UPS, 
     CANVAS, 
     GROUND_POUND,
-    PARTICLES
+    PARTICLES,
+    HINT_DURATION
 } from './config.js';
 import { AudioManager, audioManager } from './audio.js';
 import { ParticleSystem, particleSystem } from './particles.js';
@@ -424,6 +425,11 @@ export class Game {
             particleSystem.createInvincibilityAura(player.x, player.y, player.width, player.height);
         }
         
+        // Create power-up aura for active power-ups (Phase 4 UX improvement)
+        if (player.powerUp && this.animationFrame % 4 === 0) {
+            particleSystem.createPowerUpAura(player.x, player.y, player.width, player.height, player.powerUp);
+        }
+        
         // Create dash trail
         if (player.isDashing && this.animationFrame % 2 === 0) {
             particleSystem.createDashTrail(player.x, player.y, player.width, player.height, player.facing);
@@ -700,6 +706,13 @@ export class Game {
 
                 audioManager.playSound('powerup');
                 this.ui.triggerScreenShake('medium');
+                
+                // Show power-up tutorial hint (Phase 4 UX improvement)
+                if (!this.ui.tutorialHints.powerUp.shown) {
+                    this.ui.tutorialHints.powerUp.shown = true;
+                    this.ui.activeHint = this.ui.tutorialHints.powerUp.text;
+                    this.ui.hintTimer = HINT_DURATION;
+                }
                 
                 // Enhanced power-up collection effect
                 let powerUpColor = '#00ffff';
